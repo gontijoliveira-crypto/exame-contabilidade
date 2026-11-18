@@ -1,0 +1,35 @@
+{
+  "setorPadrao": "atendimento",
+  "setores": [
+    {
+      "id": "fiscal",
+      "nome": "Fiscal",
+      "descricao": "Impostos e obrigações fiscais: notas fiscais (emissão, cancelamento, dúvidas), guias de impostos (DAS do Simples Nacional, ICMS, ISS, PIS, COFINS, IRPJ, CSLL), SPED, apuração, parcelamento de tributos, certidões negativas de débitos fiscais, enquadramento tributário."
+    },
+    {
+      "id": "contabil",
+      "nome": "Contábil",
+      "descricao": "Contabilidade: balanço, balancete, DRE, lançamentos e conciliação, extratos bancários para contabilização, livros contábeis, relatórios para bancos e financiamentos, Imposto de Renda Pessoa Física (IRPF), DEFIS, ECD e ECF."
+    },
+    {
+      "id": "pessoal",
+      "nome": "Departamento Pessoal",
+      "descricao": "Funcionários e folha: admissão, demissão e rescisão, férias, 13º salário, folha de pagamento e holerites, pró-labore, FGTS, INSS, eSocial, ponto, atestados, afastamentos, vale-transporte, contratos de trabalho e de estágio."
+    },
+    {
+      "id": "societario",
+      "nome": "Societário e Legalização",
+      "descricao": "Abertura, alteração e encerramento de empresas, contrato social, mudança de sócios, endereço ou atividade (CNAE), Junta Comercial, alvarás e licenças, inscrição estadual e municipal, certificado digital, MEI."
+    },
+    {
+      "id": "financeiro",
+      "nome": "Financeiro",
+      "descricao": "Relação financeira do cliente com o próprio escritório: boleto e nota fiscal dos honorários, segunda via, comprovante de pagamento dos honorários, negociação de mensalidade, contratação de serviços e propostas."
+    },
+    {
+      "id": "atendimento",
+      "nome": "Atendimento Geral",
+      "descricao": "Assuntos que não se encaixam claramente nos demais setores, pedidos de reunião, reclamações, elogios e mensagens cuja demanda ainda não está clara."
+    }
+  ]
+}
