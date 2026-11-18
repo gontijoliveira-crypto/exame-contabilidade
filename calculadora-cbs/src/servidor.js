@@ -7,10 +7,10 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
-import { ErroFormato, ErroPedido, conferirData, montarOperacao, resumirCalculo, traduzirErro, validarPedido } from "./calculo.js";
+import { ErroFormato, ErroPedido, conferirData, montarOperacao, montarOperacaoSubcontratada, resumirCalculo, resumirCredito, traduzirErro, validarPedido } from "./calculo.js";
 import { cssDaMarca, iconeDaMarca } from "./marca.js";
 import { renderizarNaoEncontrada, renderizarPagina } from "./pagina.js";
-import { ErroDaReceita, ErroIndisponivel } from "./receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel } from "./receita.js";
 
 class ErroHttp extends Error {
   constructor(status, mensagem, cabecalhos = {}) {
@@ -196,8 +196,21 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
       if (!/^application\/json\b/i.test(String(req.headers["content-type"] || ""))) throw new ErroHttp(415, "Envie os dados em JSON.");
       if (!dentroDoLimiteDeCalculos(ip)) throw new ErroHttp(429, "Muitos cálculos em pouco tempo. Aguarde um minuto e tente de novo.", { "Retry-After": "60" });
       const pedido = validarPedido(await lerJson(req));
-      const { corpo, aviso } = await receita.calcular(montarOperacao(pedido, crypto.randomUUID().replaceAll("-", "")));
-      return json(req, res, 200, resumirCalculo(corpo, { aviso, pedido }));
+      const novoId = () => crypto.randomUUID().replaceAll("-", "");
+      const empresa = pedido.credito?.tipo === "empresa";
+      // O frete da transportadora subcontratada é calculado pela Receita junto com a operação.
+      const [principal, subcontratado] = await Promise.all([
+        receita.calcular(montarOperacao(pedido, novoId())),
+        empresa ? receita.calcular(montarOperacaoSubcontratada(pedido, novoId())) : null,
+      ]);
+      const resultado = resumirCalculo(principal.corpo, { aviso: principal.aviso, pedido });
+      if (pedido.credito) {
+        const sub = empresa ? resumirCalculo(subcontratado.corpo, { aviso: subcontratado.aviso, pedido: { ...pedido, valor: pedido.credito.valor } }) : null;
+        resultado.credito = resumirCredito(pedido.credito, resultado, sub);
+      } else {
+        resultado.credito = null;
+      }
+      return json(req, res, 200, resultado);
     }
 
     exigirLeitura(req);
@@ -219,6 +232,10 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
     if (erro instanceof ErroPedido) return json(req, res, 400, { erro: erro.message, detalhe: null, campo: erro.campo });
     if (erro instanceof ErroHttp) return json(req, res, erro.status, { erro: erro.message, detalhe: null, campo: null }, "no-store", erro.cabecalhos);
     if (erro instanceof ErroDaReceita) return json(req, res, 422, traduzirErro(erro.problema));
+    if (erro instanceof ErroBloqueio) {
+      log.warn(`Consulta bloqueada pelo firewall da Receita Federal (${req.url}). Muitas consultas a partir deste servidor?`);
+      return json(req, res, 503, { erro: "A Calculadora da Receita Federal está recusando consultas no momento.", detalhe: "Tente de novo em alguns minutos.", campo: null }, "no-store", { "Retry-After": "120" });
+    }
     if (erro instanceof ErroIndisponivel) {
       log.warn(`Receita Federal indisponível: ${erro.message}`);
       return json(req, res, 503, { erro: "A Calculadora da Receita Federal não respondeu.", detalhe: "Tente de novo em instantes.", campo: null }, "no-store", { "Retry-After": "10" });

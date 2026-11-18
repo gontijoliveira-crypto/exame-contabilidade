@@ -5,7 +5,7 @@ import path from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
-import { ErroDaReceita, ErroIndisponivel } from "../src/receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel } from "../src/receita.js";
 import { criarLimitador, criarServidor, ipDoCliente } from "../src/servidor.js";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -315,4 +315,43 @@ test("respostas JSON grandes são compactadas quando o navegador aceita", async 
   assert.equal(compactada.cabecalhos["content-encoding"], "gzip");
   assert.ok(compactada.corpo.length < simples.corpo.length / 2);
   assert.deepEqual(JSON.parse(zlib.gunzipSync(compactada.corpo).toString("utf8")), muitos);
+});
+
+test("crédito com transportador autônomo: uma só chamada à Receita e o crédito na resposta", async () => {
+  const { calcular, chamadas } = await subir({ receita: { calcular: async (op) => { chamadas.push(["calcular", op]); return { corpo: casos.simulado2027.resposta.corpo, aviso: "6" }; } } });
+  const pedido = { ...PEDIDO, data: "2027-03-18", aliquotas: { cbs: "8.8", ibsEstadual: "0.05", ibsMunicipal: "0.05" }, credito: { tipo: "autonomo", valor: "7000.00", cbs: "3", ibs: "0.05" } };
+  const r = await calcular(pedido);
+  assert.equal(r.status, 200);
+  const dados = await r.json();
+  assert.equal(chamadas.length, 1);
+  assert.deepEqual(dados.credito.cbs, { percentual: "3", valor: "203.88" });
+  assert.equal(dados.credito.saldo.total, "-118.38");
+});
+
+test("crédito com transportadora do regime regular: o frete dela também é calculado pela Receita", async () => {
+  const { calcular, chamadas } = await subir({ receita: { calcular: async (op) => { chamadas.push(["calcular", op]); return { corpo: casos.simulado2027.resposta.corpo, aviso: "6" }; } } });
+  const pedido = { ...PEDIDO, data: "2027-03-18", aliquotas: { cbs: "8.8", ibsEstadual: "0.05", ibsMunicipal: "0.05" }, credito: { tipo: "empresa", valor: "1000.00" } };
+  const dados = await (await calcular(pedido)).json();
+  assert.equal(chamadas.length, 2);
+  const sub = chamadas.map(([, op]) => op).find((op) => op.itens[0].baseCalculo === 1000 && op !== chamadas[0][1]);
+  assert.deepEqual(sub.itens[0], { numero: 1, cst: "000", cClassTrib: "000001", baseCalculo: 1000, aliquotasNominais: { cbs: 8.8, ibsEstadual: 0.05, ibsMunicipal: 0.05 } });
+  assert.notEqual(chamadas[0][1].id, chamadas[1][1].id);
+  assert.equal(dados.credito.total, "89.00");
+  assert.deepEqual(dados.credito.saldo, { cbs: "0.00", ibs: "0.00", total: "0.00" });
+});
+
+test("crédito em 2026 é recusado antes de chegar à Receita", async () => {
+  const { calcular, chamadas } = await subir();
+  const r = await calcular({ ...PEDIDO, credito: { tipo: "autonomo", valor: "100", cbs: "1", ibs: "1" } });
+  assert.equal(r.status, 400);
+  assert.equal((await r.json()).campo, "creditoTipo");
+  assert.deepEqual(chamadas, []);
+});
+
+test("bloqueio do firewall da Receita vira 503 com mensagem própria", async () => {
+  const { calcular } = await subir({ receita: { calcular: async () => { throw new ErroBloqueio("Request Rejected"); } } });
+  const r = await calcular();
+  assert.equal(r.status, 503);
+  assert.equal(r.headers.get("retry-after"), "120");
+  assert.match((await r.json()).erro, /recusando consultas/);
 });

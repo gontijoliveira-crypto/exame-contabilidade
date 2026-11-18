@@ -25,6 +25,10 @@ Visitante ──► Página da calculadora (este servidor) ──► Calculadora
 - **Erros da Receita.** Quando a classificação exige NCM, NBS ou outro dado, a página mostra o motivo
   e leva o cursor ao campo.
 
+- **Crédito na subcontratação do frete (2027 em diante).** Para a transportadora que subcontrata o
+  frete da operação: informa quem fez o transporte e quanto foi pago, e a página mostra o crédito e o
+  saldo (débito menos crédito) de CBS e de IBS. Veja a seção abaixo.
+
 O que ela **não** faz: Imposto Seletivo, compras governamentais, classificações que dependem do grupo
 de tributação regular (suspensão, por exemplo) e operações com vários itens. Nesses casos a mensagem
 da Receita é mostrada como veio.
@@ -89,8 +93,14 @@ do ar por um tempo.
 Por padrão, o servidor consulta a API que a Receita mantém em
 `https://piloto-cbs.tributos.gov.br/servico/calculadora-consumo/api`. Ela responde sem chave e traz
 sempre as tabelas mais recentes, mas é um ambiente piloto: a Receita não publica garantia de
-disponibilidade nem termos de uso para ele, e pode mudar ou restringir o acesso. Se isso acontecer, a
-página avisa que a calculadora não respondeu, sem mostrar valores errados.
+disponibilidade nem termos de uso para ele. O manual da Receita diz que não há API pública para cálculo
+online.
+
+**Na prática, ela bloqueia quem consulta muito.** Em 18/11/2026, depois de alguns milhares de consultas
+de teste a partir do mesmo servidor, o firewall da Receita passou a responder "Request Rejected" aos
+cálculos (as listas continuaram funcionando). A página reconhece esse bloqueio, não insiste e mostra
+"A Calculadora da Receita Federal está recusando consultas no momento". Com a calculadora pública,
+todos os visitantes saem pelo mesmo endereço do servidor; se o uso crescer, o bloqueio pode voltar.
 
 O caminho de integração que a Receita indica é o componente de código aberto, publicado em
 novembro de 2026 em [github.com/ReceitaFederal/calculadora-rtc-regime-regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular)
@@ -101,10 +111,40 @@ componente seguindo o README da Receita e aponte a calculadora para ele:
 RECEITA_API=http://localhost:8080/api npm start
 ```
 
+**Este é o caminho recomendado para uso público contínuo**: sem bloqueio por volume e sem depender do
+ambiente piloto. No Railway, ele seria um terceiro serviço do projeto (Java 21, porta 8080), e a
+calculadora aponta para o endereço privado dele com `RECEITA_API`.
+
 Nesse modo os dados da operação não saem do seu servidor, mas é preciso atualizar o componente quando
 a Receita publicar novas tabelas. A compatibilidade foi conferida pela leitura do código da versão
 1.6.1 (mesmos caminhos, formatos e cabeçalho de aviso); os testes deste projeto foram feitos contra a
 API hospedada.
+
+## Crédito na subcontratação do frete
+
+Disponível para fatos geradores a partir de 01/01/2027. Duas situações:
+
+| Subcontratado | Crédito da transportadora contratante | Quem calcula |
+|---|---|---|
+| Transportador autônomo pessoa física, não contribuinte ou MEI | Crédito presumido do art. 169 da LC 214/2025: para cada tributo, `valor pago × p ÷ (100 + p)` (Decreto 12.955/2026, art. 253), com `p` informado na tela | Esta página |
+| Transportadora do regime regular | O IBS e a CBS cobrados no frete dela | Calculadora da Receita (mesma data, local e alíquotas da operação, tributação integral) |
+
+Pontos que a página explica ao visitante:
+
+- O crédito presumido vale só para transporte de carga, contratado e pago por contribuinte do regime
+  regular, e é apropriado conforme os pagamentos ao transportador são confirmados (no CT-e, pelo
+  evento de apropriação de crédito presumido, código 02).
+- O crédito da CBS só abate CBS, e o do IBS só abate IBS. Não há devolução em dinheiro.
+- Em 2026 não há crédito presumido: os arts. 168 a 171 só produzem efeitos a partir de 2027 (LC 214/2025,
+  art. 544, III, na redação da LC 227/2026).
+- **Os percentuais de 2027 ainda não foram publicados** (o ato conjunto do Ministério da Fazenda e do
+  Comitê Gestor do IBS deveria sair até setembro de 2026; situação em 18/11/2026). Por isso a tela pede
+  os dois percentuais e não sugere nenhum. Quando o ato sair, os percentuais podem ser colocados como
+  sugestão na tela.
+- Transportadora do Simples Nacional não está coberta: o crédito fica limitado ao que ela paga no
+  Simples, valor que a página não tem como saber.
+
+O saldo é uma estimativa por operação. Na apuração real, débitos e créditos são somados no período.
 
 ## Identidade visual
 

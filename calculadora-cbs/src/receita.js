@@ -7,6 +7,14 @@
 /** A Receita não respondeu (rede, tempo esgotado ou erro 5xx), mesmo depois das tentativas. */
 export class ErroIndisponivel extends Error {}
 
+/**
+ * O firewall da Receita recusou a consulta (página "Request Rejected" no lugar da resposta).
+ * Acontece quando o mesmo endereço faz muitas consultas; repetir na hora só prolonga o bloqueio.
+ */
+export class ErroBloqueio extends ErroIndisponivel {}
+
+const PAGINA_DE_BLOQUEIO = /Request Rejected|requested URL was rejected/i;
+
 /** A Receita recusou o pedido (4xx) e explicou o motivo em `problema` (title, detail, type). */
 export class ErroDaReceita extends Error {
   constructor(status, problema) {
@@ -74,6 +82,9 @@ export function criarReceita({
               json = null;
             }
           }
+          if (json === null && PAGINA_DE_BLOQUEIO.test(conteudo.slice(0, 2000))) {
+            throw new ErroBloqueio("O firewall da Receita Federal recusou a consulta (Request Rejected).");
+          }
           if (!resposta.ok) throw new ErroDaReceita(resposta.status, json);
           if (json === null) {
             ultima = new Error("Resposta fora do formato esperado.");
@@ -81,7 +92,7 @@ export function criarReceita({
           }
           return { corpo: json, cabecalhos: resposta.headers };
         } catch (erro) {
-          if (erro instanceof ErroDaReceita) throw erro;
+          if (erro instanceof ErroDaReceita || erro instanceof ErroBloqueio) throw erro;
           ultima = erro;
         }
       }

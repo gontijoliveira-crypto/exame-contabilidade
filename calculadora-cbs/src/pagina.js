@@ -158,6 +158,40 @@ ${previa.join("\n")}
           </div>
         </fieldset>
 
+        <fieldset class="aliquotas credito" id="credito">
+          <legend>Crédito na subcontratação do frete <span class="opcional">opcional</span></legend>
+          <p class="dica" id="dica-credito">Para a transportadora que subcontrata o frete desta operação. Informe quem fez o transporte e quanto foi pago a ele, e veja o crédito e o saldo.</p>
+          <p class="nota" id="credito-indisponivel">Disponível para fatos geradores a partir de 01/01/2027. Em 2026 não há crédito presumido na contratação de transportador autônomo (LC 214/2025, art. 544, III).</p>
+          <label class="marcar"><input type="checkbox" id="creditoAtivo" aria-describedby="dica-credito credito-indisponivel"> Simular o crédito da subcontratação</label>
+          <div class="credito-campos" id="credito-campos" hidden>
+            <div class="campo">
+              <label for="creditoTipo">Quem foi subcontratado</label>
+              <select id="creditoTipo" name="creditoTipo">
+                <option value="autonomo">Transportador autônomo pessoa física (não contribuinte ou MEI)</option>
+                <option value="empresa">Transportadora do regime regular de IBS e CBS</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="creditoValor">Valor pago ao subcontratado (R$)</label>
+              <input id="creditoValor" name="creditoValor" type="text" inputmode="decimal" autocomplete="off" placeholder="700,00">
+            </div>
+            <div id="credito-autonomo">
+              <p class="nota" id="nota-credito-autonomo">Crédito presumido do art. 169 da LC 214/2025: vale só para transporte de carga, contratado e pago por empresa do regime regular, e é apropriado conforme os pagamentos ao transportador são confirmados. Os percentuais de 2027 dependem de ato conjunto do Ministério da Fazenda e do Comitê Gestor do IBS, que ainda não foi publicado (informação de 18/11/2026). Informe os percentuais que deseja simular.</p>
+              <div class="linha">
+                <div class="campo">
+                  <label for="creditoCbs">Percentual do crédito de CBS (%)</label>
+                  <input id="creditoCbs" name="creditoCbs" type="text" inputmode="decimal" autocomplete="off" placeholder="a definir" aria-describedby="nota-credito-autonomo">
+                </div>
+                <div class="campo">
+                  <label for="creditoIbs">Percentual do crédito de IBS (%)</label>
+                  <input id="creditoIbs" name="creditoIbs" type="text" inputmode="decimal" autocomplete="off" placeholder="a definir" aria-describedby="nota-credito-autonomo">
+                </div>
+              </div>
+            </div>
+            <p class="nota" id="credito-empresa" hidden>O crédito é o IBS e a CBS cobrados no frete da transportadora subcontratada, calculados pela Calculadora da Receita com a mesma data, o mesmo local e as mesmas alíquotas desta operação. Se ela for optante do Simples Nacional, o crédito fica limitado ao que ela paga no Simples, e esta simulação não se aplica.</p>
+          </div>
+        </fieldset>
+
         <div class="alerta erro" id="erro-form" role="alert" hidden></div>
         <button type="submit" class="primario" id="calcular" disabled>Calcular</button>
       </form>
@@ -170,7 +204,7 @@ ${previa.join("\n")}
       <div id="calculo" hidden>
         <div class="alerta aviso" id="aviso" hidden></div>
         <p class="total"><span>Total de CBS + IBS</span><b id="r-total"></b><small id="r-carga"></small></p>
-        <div class="tabela">
+        <div class="tabela" tabindex="0" role="region" aria-label="Tributos da operação">
           <table>
             <thead><tr><th scope="col">Tributo</th><th scope="col">Alíquota</th><th scope="col">Valor</th></tr></thead>
             <tbody>
@@ -186,6 +220,22 @@ ${previa.join("\n")}
           <summary>Memória de cálculo</summary>
           <div id="memoria-texto"></div>
         </details>
+
+        <div class="bloco-credito" id="r-credito" hidden>
+          <h3>Crédito da subcontratação</h3>
+          <p class="dica" id="r-credito-quem"></p>
+          <div class="tabela" tabindex="0" role="region" aria-label="Crédito e saldo da subcontratação">
+            <table>
+              <thead><tr><th scope="col">Tributo</th><th scope="col">Débito</th><th scope="col">Crédito</th><th scope="col">Saldo</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">CBS</th><td id="r-cred-cbs-debito"></td><td id="r-cred-cbs"></td><td id="r-saldo-cbs"></td></tr>
+                <tr><th scope="row">IBS</th><td id="r-cred-ibs-debito"></td><td id="r-cred-ibs"></td><td id="r-saldo-ibs"></td></tr>
+                <tr class="soma"><th scope="row">Total</th><td id="r-cred-total-debito"></td><td id="r-cred-total"></td><td id="r-saldo-total"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="nota" id="r-credito-nota"></p>
+        </div>
       </div>
 
       <p class="fonte" id="fonte" hidden></p>
@@ -199,6 +249,7 @@ ${previa.join("\n")}
       <li>O cálculo é feito pela Calculadora de Tributos da Receita Federal, com as regras da Reforma Tributária do Consumo (Lei Complementar nº 214/2025).</li>
       <li>Em 2026 valem as alíquotas de teste: CBS de 0,9% e IBS de 0,1%. Quem cumpre as obrigações acessórias fica dispensado de recolher esses valores (LC 214/2025, art. 348). As alíquotas de teste não se aplicam a optantes do Simples Nacional.</li>
       <li>A partir de 2027 as alíquotas ainda não constam na base da Receita Federal. Por isso a calculadora pede as alíquotas que você quer simular e marca o resultado como simulação.</li>
+      <li>O crédito na subcontratação é uma estimativa desta operação. Na apuração real, créditos e débitos são somados no período, e o crédito presumido do transportador autônomo depende de documento fiscal e da confirmação do pagamento a ele.</li>
       <li>Os dados da operação não são guardados por ${nome}. Eles são enviados à Calculadora da Receita Federal apenas para fazer a conta.</li>
     </ul>
   </section>

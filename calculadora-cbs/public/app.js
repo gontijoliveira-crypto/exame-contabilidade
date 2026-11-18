@@ -5,7 +5,9 @@ const $ = (id) => document.getElementById(id);
 const campos = {
   valor: $("valor"), data: $("data"), uf: $("uf"), municipio: $("municipio"), cst: $("cst"), cClassTrib: $("cClassTrib"),
   ncm: $("ncm"), nbs: $("nbs"), aliquotaCbs: $("aliquotaCbs"), aliquotaIbsUf: $("aliquotaIbsUf"), aliquotaIbsMun: $("aliquotaIbsMun"),
+  creditoTipo: $("creditoTipo"), creditoValor: $("creditoValor"), creditoCbs: $("creditoCbs"), creditoIbs: $("creditoIbs"),
 };
+const INICIO_CREDITO = "2027-01-01"; // crédito presumido do transportador autônomo: LC 214/2025, art. 544, III
 const botao = $("calcular");
 const INICIO_ALIQUOTAS = "2027-01-01"; // a partir daqui a Receita pede as alíquotas da simulação
 let situacoes = [];
@@ -123,6 +125,19 @@ let periodos = [];
 try { periodos = JSON.parse($("aliquotas").dataset.periodos || "[]"); } catch { /* sem apoio: os campos ficam em branco */ }
 const comVirgula = (v) => String(v).replace(".", ",");
 
+/** Crédito na subcontratação: só a partir de 2027; os percentuais só valem para o transportador autônomo. */
+function ajustarCredito() {
+  const disponivel = dataNoPeriodo() && campos.data.value >= INICIO_CREDITO;
+  const ativo = $("creditoAtivo");
+  ativo.disabled = !disponivel;
+  if (!disponivel) ativo.checked = false;
+  $("credito-indisponivel").hidden = disponivel;
+  $("credito-campos").hidden = !ativo.checked;
+  const autonomo = campos.creditoTipo.value === "autonomo";
+  $("credito-autonomo").hidden = !autonomo;
+  $("credito-empresa").hidden = autonomo;
+}
+
 function ajustarAliquotas() {
   const ativo = dataNoPeriodo() && campos.data.value >= INICIO_ALIQUOTAS;
   $("aliquotas").hidden = !ativo;
@@ -200,7 +215,48 @@ function lerFormulario() {
       pedido.aliquotas[chave] = v;
     }
   }
+  if ($("creditoAtivo").checked && campos.data.value >= INICIO_CREDITO) {
+    const valorCredito = lerValor(campos.creditoValor.value);
+    if (!valorCredito || Number(valorCredito) <= 0) throw new Falha("Informe o valor pago ao subcontratado, por exemplo 700,00.", null, "creditoValor");
+    pedido.credito = { tipo: campos.creditoTipo.value, valor: valorCredito };
+    if (pedido.credito.tipo === "autonomo") {
+      for (const [chave, campo, nome] of [["cbs", "creditoCbs", "da CBS"], ["ibs", "creditoIbs", "do IBS"]]) {
+        const v = lerPercentual(campos[campo].value);
+        if (!v) throw new Falha(`Informe o percentual do crédito presumido ${nome} (entre 0 e 100%).`, null, campo);
+        pedido.credito[chave] = v;
+      }
+    }
+  }
   return pedido;
+}
+
+function mostrarCredito(r) {
+  const bloco = $("r-credito");
+  const c = r.credito;
+  bloco.hidden = !c;
+  if (!c) return;
+  $("r-credito-quem").textContent = c.tipo === "autonomo"
+    ? `Transportador autônomo pessoa física, valor pago de ${reais(c.base)}. Crédito presumido com ${porcento(c.cbs.percentual)} para a CBS e ${porcento(c.ibs.percentual)} para o IBS.`
+    : `Transportadora do regime regular, valor pago de ${reais(c.base)}. Crédito igual ao IBS e à CBS cobrados no frete dela.`;
+  const celula = (id, valor) => {
+    $(id).textContent = reais(String(valor).replace(/^-/, ""));
+    if (Number(valor) < 0) $(id).textContent += " a favor";
+    $(id).classList.toggle("negativo", Number(valor) < 0);
+  };
+  $("r-cred-cbs-debito").textContent = reais(c.debito.cbs);
+  $("r-cred-ibs-debito").textContent = reais(c.debito.ibs);
+  $("r-cred-total-debito").textContent = reais(c.debito.total);
+  $("r-cred-cbs").textContent = reais(c.cbs.valor);
+  $("r-cred-ibs").textContent = reais(c.ibs.valor);
+  $("r-cred-total").textContent = reais(c.total);
+  celula("r-saldo-cbs", c.saldo.cbs);
+  celula("r-saldo-ibs", c.saldo.ibs);
+  celula("r-saldo-total", c.saldo.total);
+  const notas = [];
+  if (c.tipo === "autonomo") notas.push("Fórmula do crédito presumido, para cada tributo: valor pago × p ÷ (100 + p), em que p é o percentual informado (Decreto 12.955/2026, art. 253). Os percentuais oficiais de 2027 ainda não foram publicados.");
+  notas.push("O crédito da CBS só abate CBS, e o do IBS só abate IBS.");
+  if (Number(c.saldo.total) < 0) notas.push("Saldo a favor: o crédito é maior que o tributo desta operação e pode abater o devido em outras operações do período.");
+  $("r-credito-nota").textContent = notas.join(" ");
 }
 
 function linhaDoTributo(prefixo, t) {
@@ -265,6 +321,7 @@ function mostrarResultado(r) {
   if (r.aviso) mostrarMensagem($("aviso"), "Valores simulados", r.aviso);
   else $("aviso").hidden = true;
 
+  mostrarCredito(r);
   $("vazio").hidden = true;
   $("calculo").hidden = false;
 }
@@ -311,7 +368,10 @@ campos.uf.addEventListener("change", () => {
 });
 campos.municipio.addEventListener("change", () => guardar("calculadora-municipio", campos.municipio.value));
 campos.cst.addEventListener("change", () => carregarClassificacoes());
+$("creditoAtivo").addEventListener("change", ajustarCredito);
+campos.creditoTipo.addEventListener("change", ajustarCredito);
 campos.data.addEventListener("change", () => {
+  ajustarCredito();
   ajustarAliquotas();
   if (!dataNoPeriodo() || !listasProntas) return;
   carregarSituacoes().catch((falha) => mostrarMensagem($("erro-form"), falha.message, falha.detalhe));
@@ -321,4 +381,5 @@ $("tentar").addEventListener("click", iniciar);
 const hoje = hojeEmBrasilia();
 campos.data.value = hoje < campos.data.min ? campos.data.min : hoje > campos.data.max ? campos.data.max : hoje;
 ajustarAliquotas();
+ajustarCredito();
 iniciar();

@@ -1,5 +1,6 @@
 /* Layout: capa na cor da marca com a logo e o título; abaixo, dois cartões lado a lado (dados da operação e resultado), empilhados no celular; por fim, as observações. */
 :root {
+  --ok: #0F7B4B;
   /* Cores da marca: os valores definitivos vêm de /marca.css (config/marca.json). */
   --azul: #011433;
   --azul-claro: #1F4FA8;
@@ -44,6 +45,7 @@
     --alerta-borda: #7A2F26;
     --aviso-fundo: #2B2410;
     --aviso-borda: #8A6A1A;
+    --ok: #5CD18C;
   }
 }
 
@@ -101,6 +103,16 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--al
 fieldset.aliquotas { border: 1px solid var(--borda); border-radius: 10px; margin: 0; padding: 14px 16px 16px; display: grid; gap: 12px; min-width: 0; }
 fieldset.aliquotas legend { font: 600 15px var(--titulo); padding: 0 6px; }
 fieldset.aliquotas .nota { margin-top: 0; font-size: 13.5px; line-height: 1.45; }
+.marcar { display: flex; align-items: center; gap: 10px; font-weight: 700; min-height: 44px; cursor: pointer; }
+.marcar input { width: 24px; height: 24px; min-height: 0; accent-color: var(--azul-claro); flex: none; }
+.marcar:has(input:disabled) { color: var(--suave); cursor: default; }
+.credito-campos { display: grid; gap: 14px; }
+#credito-autonomo { display: grid; gap: 12px; }
+.bloco-credito { margin-top: 22px; padding-top: 18px; border-top: 2px solid var(--amarelo); }
+.bloco-credito h3 { font: 600 17px var(--titulo); margin: 0 0 4px; }
+.bloco-credito .dica { margin-bottom: 8px; }
+tr.soma th, tr.soma td { font-weight: 700; }
+td.negativo { color: var(--ok); }
 
 button { font-family: var(--titulo); cursor: pointer; }
 button:disabled { opacity: .55; cursor: default; }
@@ -147,4 +159,9 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 @media print {
   .capa { border-bottom-width: 2px; }
   .pular, .resumo, #calcular, footer { display: none; }
+}
+@media (max-width: 520px) {
+  .bloco-credito table { font-size: 13.5px; }
+  .bloco-credito th, .bloco-credito td { padding-left: 6px; }
+  .bloco-credito thead th { font-size: 10.5px; letter-spacing: .03em; }
 }

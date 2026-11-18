@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErroDaReceita, ErroIndisponivel, criarReceita, nomeProprio } from "../src/receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel, criarReceita, nomeProprio } from "../src/receita.js";
 
 const silencioso = { warn() {}, error() {} };
 const json = (corpo, status = 200, cabecalhos = {}) => new Response(JSON.stringify(corpo), { status, headers: { "content-type": "application/json", ...cabecalhos } });
@@ -163,4 +163,16 @@ test("há um teto de chamadas simultâneas à Receita", async () => {
   await assert.rejects(receita.calcular({}), ErroIndisponivel);
   liberar();
   await Promise.all([a, b]);
+});
+
+test("bloqueio do firewall da Receita: não repete a chamada e é identificado", async () => {
+  const bloqueio = () => new Response("<html><head><title>Request Rejected</title></head><body>The requested URL was rejected.</body></html>", { status: 200, headers: { "content-type": "text/html" } });
+  const { receita, chamadas } = montar([bloqueio()]);
+  await assert.rejects(receita.calcular({ id: "1" }), (erro) => erro instanceof ErroBloqueio && erro instanceof ErroIndisponivel);
+  assert.equal(chamadas.length, 1);
+  // Com uma lista já guardada, o bloqueio não derruba a página: a cópia guardada continua valendo.
+  const lista = montar([json(UFS), bloqueio()]);
+  const primeira = await lista.receita.ufs();
+  lista.avancar(25 * 3_600_000);
+  assert.deepEqual(await lista.receita.ufs(), primeira);
 });

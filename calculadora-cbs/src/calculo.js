@@ -105,7 +105,40 @@ export function validarPedido(corpo) {
     }
   }
 
-  return { valor, data, uf, municipio: Number(municipio), cst, cClassTrib, ncm: ncm || null, nbs: nbs || null, aliquotas };
+  return { valor, data, uf, municipio: Number(municipio), cst, cClassTrib, ncm: ncm || null, nbs: nbs || null, aliquotas, credito: validarCredito(corpo.credito, data) };
+}
+
+export const INICIO_CREDITO_SUBCONTRATACAO = "2027-01-01"; // LC 214/2025, art. 544, III (redação da LC 227/2026)
+
+/**
+ * Crédito na subcontratação do frete (opcional), a partir de 2027:
+ * - "autonomo": transportador autônomo pessoa física não contribuinte ou MEI. Crédito presumido do
+ *   art. 169 da LC 214/2025, com os percentuais de CBS e de IBS informados (o ato conjunto que os fixa
+ *   ainda não foi publicado).
+ * - "empresa": transportadora do regime regular. Crédito do IBS e da CBS cobrados no frete dela,
+ *   calculado pela Calculadora da Receita com as mesmas alíquotas da operação.
+ */
+function validarCredito(bruto, data) {
+  if (bruto === undefined || bruto === null) return null;
+  if (typeof bruto !== "object" || Array.isArray(bruto)) throw new ErroPedido("Pedido inválido.");
+  if (data < INICIO_CREDITO_SUBCONTRATACAO) {
+    throw new ErroPedido("O crédito na subcontratação só pode ser simulado para fatos geradores a partir de 01/01/2027.", "creditoTipo");
+  }
+  const tipo = texto(bruto.tipo);
+  if (tipo !== "autonomo" && tipo !== "empresa") throw new ErroPedido("Escolha quem foi subcontratado.", "creditoTipo");
+  const valor = texto(bruto.valor);
+  if (!DINHEIRO.test(valor) || Number(valor) <= 0) throw new ErroPedido("Informe o valor pago ao subcontratado, maior que zero.", "creditoValor");
+  if (tipo === "empresa") return { tipo, valor };
+  const percentuais = {};
+  for (const [chave, campo, nome] of [
+    ["cbs", "creditoCbs", "da CBS"],
+    ["ibs", "creditoIbs", "do IBS"],
+  ]) {
+    const v = texto(bruto[chave]);
+    if (!percentualValido(v)) throw new ErroPedido(`Informe o percentual do crédito presumido ${nome} (entre 0 e 100%).`, campo);
+    percentuais[chave] = v;
+  }
+  return { tipo, valor, ...percentuais };
 }
 
 /** Monta a operação de consumo (um item) no formato do serviço "regime-geral" da Receita. */
@@ -130,6 +163,11 @@ export function montarOperacao(pedido, id) {
   };
 }
 
+/** Operação do frete subcontratado de uma transportadora do regime regular: tributação integral, mesma data e local. */
+export function montarOperacaoSubcontratada(pedido, id) {
+  return montarOperacao({ ...pedido, valor: pedido.credito.valor, cst: "000", cClassTrib: "000001", ncm: null, nbs: null }, id);
+}
+
 // ---------- valores ----------
 // Contas em centavos inteiros, para não haver erro de arredondamento de ponto flutuante.
 
@@ -140,7 +178,37 @@ function centavos(valor) {
   return Number(inteiro) * 100 + Number(decimal.padEnd(2, "0"));
 }
 
-const emReais = (c) => `${Math.floor(c / 100)}.${String(c % 100).padStart(2, "0")}`;
+const emReais = (c) => `${c < 0 ? "-" : ""}${Math.floor(Math.abs(c) / 100)}.${String(Math.abs(c) % 100).padStart(2, "0")}`;
+
+/** Divide inteiros (BigInt) e arredonda como a Calculadora da Receita: meio centavo vai para o par (HALF_EVEN). */
+function dividirArredondando(numerador, divisor) {
+  let quociente = numerador / divisor;
+  const dobroDoResto = 2n * (numerador % divisor);
+  if (dobroDoResto > divisor || (dobroDoResto === divisor && quociente % 2n === 1n)) quociente += 1n;
+  return quociente;
+}
+
+/** "12.375" → { inteiro: 12375n, escala: 1000n } (percentual sem a vírgula e a potência de 10 retirada). */
+function percentualInteiro(percentualTexto) {
+  const [inteiro, decimal = ""] = percentualTexto.split(".");
+  return { inteiro: BigInt(inteiro + decimal), escala: 10n ** BigInt(decimal.length) };
+}
+
+/** Valor em centavos × percentual ("12.5"), arredondado ao centavo. Conta exata, com inteiros. */
+export function aplicarPercentual(c, percentualTexto) {
+  const { inteiro, escala } = percentualInteiro(percentualTexto);
+  return Number(dividirArredondando(BigInt(c) * inteiro, 100n * escala));
+}
+
+/**
+ * Crédito presumido do art. 169 sobre o valor pago, em centavos: CP = [VO × C] / [1 + C], com C = p/100
+ * (Decreto 12.955/2026, art. 253, e o regulamento do IBS). O percentual incide sobre o valor líquido
+ * (valor pago menos o crédito), e não sobre o valor pago.
+ */
+export function creditoPresumido(c, percentualTexto) {
+  const { inteiro, escala } = percentualInteiro(percentualTexto);
+  return Number(dividirArredondando(BigInt(c) * inteiro, 100n * escala + inteiro));
+}
 
 const ausente = (v) => v === undefined || v === null || v === "";
 
@@ -207,6 +275,38 @@ export function resumirCalculo(corpo, { aviso = null, pedido }) {
     simulado: Boolean(objeto.calculoSimulado) || codigoAviso !== null,
     aviso: codigoAviso ? AVISOS[codigoAviso] : objeto.calculoSimulado ? AVISOS[6] : null,
     memoria: { cbs: trecho(memoria.cbs, 1500), ibsUf: trecho(memoria.ibsUF, 1500), ibsMun: trecho(memoria.ibsMun, 1500) },
+  };
+}
+
+const debitoDe = (r) => ({ cbs: centavos(r.cbs.valor), ibs: centavos(r.ibsUf.valor) + centavos(r.ibsMun.valor) });
+
+/**
+ * Crédito na subcontratação e saldo da operação (débito menos crédito, por tributo).
+ * - autônomo: crédito presumido do art. 169, calculado aqui (a Calculadora da Receita ainda não o calcula);
+ * - empresa: `subcontratada` é o resumo do frete dela calculado pela Receita, e o crédito é o tributo cobrado.
+ * O saldo negativo indica crédito maior que o tributo desta operação (sobra para outras operações).
+ */
+export function resumirCredito(credito, operacao, subcontratada = null) {
+  const base = centavos(credito.valor);
+  const debito = debitoDe(operacao);
+  let cbs;
+  let ibs;
+  if (credito.tipo === "empresa") {
+    if (!subcontratada) throw new ErroFormato("Faltou o cálculo do frete subcontratado.");
+    ({ cbs, ibs } = debitoDe(subcontratada));
+  } else {
+    cbs = creditoPresumido(base, credito.cbs);
+    ibs = creditoPresumido(base, credito.ibs);
+  }
+  return {
+    tipo: credito.tipo,
+    base: emReais(base),
+    cbs: { percentual: credito.tipo === "autonomo" ? credito.cbs : null, valor: emReais(cbs) },
+    ibs: { percentual: credito.tipo === "autonomo" ? credito.ibs : null, valor: emReais(ibs) },
+    total: emReais(cbs + ibs),
+    simulado: credito.tipo === "autonomo" || Boolean(subcontratada?.simulado),
+    debito: { cbs: emReais(debito.cbs), ibs: emReais(debito.ibs), total: emReais(debito.cbs + debito.ibs) },
+    saldo: { cbs: emReais(debito.cbs - cbs), ibs: emReais(debito.ibs - ibs), total: emReais(debito.cbs + debito.ibs - cbs - ibs) },
   };
 }
 
