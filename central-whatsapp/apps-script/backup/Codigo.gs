@@ -1,5 +1,5 @@
 /**
- * Backup — Central de Atendimento WhatsApp (Expo Contabilidade).
+ * Backup — Central de Atendimento WhatsApp (Expo Contabilidade e Consultoria).
  *
  * Recebe da central, 4 vezes por dia, a planilha de mensagens do dia e a cópia do banco, e grava em
  * "Central de Atendimento WhatsApp › Backups › AAAA › MM" no Google Drive. Cópias do banco mais antigas

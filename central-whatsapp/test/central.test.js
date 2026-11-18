@@ -284,11 +284,11 @@ test("esqueci minha senha: e-mail desconhecido ou inativo não gera link, e há 
 
 test("e-mail de redefinição tem o link e escapa o nome no HTML", async () => {
   const { mensagemDeRedefinicao } = await import("../src/email.js");
-  const marca = { nome: "Expo Contabilidade", cores: { primaria: "#011433", destaque: "#D9911C" } };
+  const marca = { nome: "Expo Contabilidade e Consultoria", cores: { primaria: "#011433", destaque: "#D9911C" } };
   const m = mensagemDeRedefinicao({ nome: "Ana <b>", link: "https://central.exemplo/#redefinir=abc", validadeMinutos: 60, marca });
   assert.match(m.texto, /https:\/\/central\.exemplo\/#redefinir=abc/);
   assert.match(m.html, /Ana &lt;b&gt;/);
-  assert.match(m.assunto, /Expo Contabilidade/);
+  assert.match(m.assunto, /Expo Contabilidade e Consultoria/);
 });
 
 test("tela de entrada: lê os indicadores da fonte, guarda cache e mantém o último dado se a fonte falhar", async () => {
@@ -300,14 +300,14 @@ test("tela de entrada: lê os indicadores da fonte, guarda cache e mantém o úl
   const fonte = path.join(pasta, "indicadores.json");
   const cache = path.join(pasta, "cache", "entrada.json");
   fs.writeFileSync(fonte, JSON.stringify({ indicadores: { selic: { nome: "Selic", valor: 13.75 } }, noticias: { itens: [] } }));
-  const cliente = { id: "expo", nome: "Expo Contabilidade" };
+  const cliente = { id: "expo", nome: "Expo Contabilidade e Consultoria" };
   const silencio = { warn() {} };
 
   const f = criarFonteDeEntrada({ fonte, cliente, arquivoCache: cache, log: silencio });
   assert.equal(f.dados(), null);
   await f.atualizar();
   assert.equal(f.dados().indicadores.selic.valor, 13.75);
-  assert.equal(f.dados().cliente.nome, "Expo Contabilidade");
+  assert.equal(f.dados().cliente.nome, "Expo Contabilidade e Consultoria");
 
   fs.writeFileSync(fonte, "<html>login do Google</html>");
   await f.atualizar();

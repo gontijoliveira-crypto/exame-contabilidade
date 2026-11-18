@@ -1,4 +1,4 @@
-# Central de Atendimento via WhatsApp · Expo Contabilidade
+# Central de Atendimento via WhatsApp · Expo Contabilidade e Consultoria
 
 Um único número de WhatsApp do escritório, vários atendentes. O número participa dos grupos com os
 clientes (e de conversas privadas); cada mensagem recebida é lida por uma IA, que identifica o assunto
