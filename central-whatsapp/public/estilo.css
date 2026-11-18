@@ -5,7 +5,9 @@
   --fundo: #F3F5FA;
   --painel: #FFFFFF;
   --borda: #D7DCEA;
-  --texto: #16203A;
+  --texto: #0B1F4D;
+  --titulo: "Lexend", "Segoe UI", system-ui, sans-serif;
+  --corpo: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --suave: #4A5677;
   --entrada: #FFFFFF;
   --saida: #E3ECFF;
@@ -15,7 +17,7 @@
 }
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
-body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto); background: var(--fundo); }
+body { font: 15.5px/1.45 var(--corpo); color: var(--texto); background: var(--fundo); }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 1px solid var(--borda); background: var(--painel); border-radius: 8px; padding: 7px 12px; }
 button:hover { border-color: var(--azul-claro); }
@@ -28,22 +30,32 @@ label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); 
 .campo { margin-bottom: 14px; }
 .erro { color: var(--alerta); font-size: 14px; min-height: 20px; margin: 6px 0; }
 
+/* marca */
+.logo { display: inline-grid; justify-items: center; gap: .16em; line-height: 1; }
+.logo .palavra { display: inline-flex; align-items: baseline; font-family: var(--titulo); font-weight: 600; letter-spacing: -.03em; color: var(--azul); }
+.logo .palavra svg { height: .66em; width: .66em; margin: 0 .05em; transform: translateY(.02em); }
+.logo .sub { font-family: var(--titulo); font-weight: 500; font-size: .13em; letter-spacing: .3em; text-transform: uppercase; color: var(--suave); padding-left: .3em; white-space: nowrap; }
+.logo.grande { font-size: clamp(4.2rem, 17vw, 6.5rem); }
+.logo.barra { font-size: 2.5rem; }
+.logo.barra .sub { font-size: .16em; letter-spacing: .22em; }
+h1, h2, h3, button, .chip, th { font-family: var(--titulo); }
+
 /* login */
-.login { min-height: 100%; display: grid; place-items: center; padding: 16px; background: var(--azul); }
-.login form { background: var(--painel); border-radius: 14px; padding: 28px; width: 100%; max-width: 360px; border-top: 5px solid var(--amarelo); }
-.login h1 { margin: 0 0 4px; font-size: 21px; color: var(--azul); }
-.login p { margin: 0 0 20px; color: var(--suave); font-size: 14px; }
+.login { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; padding: 32px 16px; background: #fff; }
+.login form { background: var(--painel); border: 1px solid var(--borda); border-top: 5px solid var(--amarelo); border-radius: 14px; padding: 26px 28px 28px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(11, 42, 111, .08); }
+.login h1 { margin: 0 0 18px; font-size: 19px; font-weight: 600; color: var(--azul); text-align: center; }
 .login button { width: 100%; padding: 10px; }
 
 /* estrutura */
 .tela { height: 100%; display: flex; flex-direction: column; }
-.topo { background: var(--azul); color: #fff; display: flex; align-items: center; gap: 14px; padding: 0 16px; min-height: 54px; flex-wrap: wrap; }
-.topo .marca { font-weight: 700; border-left: 4px solid var(--amarelo); padding-left: 10px; }
-.topo nav { display: flex; gap: 2px; flex: 1; }
-.topo nav button { background: none; border: 0; color: #C9D4F2; border-radius: 6px; padding: 8px 12px; }
-.topo nav button[aria-current="page"] { background: rgba(255,255,255,.14); color: #fff; font-weight: 600; }
-.topo .quem { font-size: 13px; color: #C9D4F2; }
-.topo .sair { background: none; color: #fff; border-color: rgba(255,255,255,.35); padding: 5px 10px; }
+.topo { background: #fff; border-bottom: 4px solid var(--amarelo); display: flex; align-items: center; gap: 8px 16px; padding: 10px 18px; flex-wrap: wrap; }
+.topo .marca { font-family: var(--titulo); font-weight: 500; color: var(--suave); border-left: 1px solid var(--borda); padding-left: 16px; align-self: stretch; display: flex; align-items: center; }
+.topo nav { display: flex; gap: 4px; flex: 1; }
+.topo nav button { background: none; border: 0; color: var(--suave); border-radius: 8px; padding: 8px 14px; font-weight: 500; }
+.topo nav button:hover { background: var(--fundo); }
+.topo nav button[aria-current="page"] { background: var(--azul); color: #fff; }
+.topo .quem { font-size: 14px; color: var(--suave); }
+.topo .sair { padding: 5px 12px; }
 .chip { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; display: inline-block; }
 .chip.ok { background: #D6F3E3; color: var(--ok); }
 .chip.aviso { background: #FFF6D1; color: #8A6400; }
@@ -106,5 +118,8 @@ th { font-size: 13px; color: var(--suave); }
   .corpo.aberto .lista { display: none; }
   .corpo:not(.aberto) .conversa { display: none; }
   .voltar { display: inline-block; }
-  .topo .quem { display: none; }
+  .topo .quem, .topo .marca { display: none; }
+  .topo { padding: 8px 12px; }
+  .topo nav { order: 3; flex-basis: 100%; }
+  .logo.barra { font-size: 2.1rem; margin-right: auto; }
 }

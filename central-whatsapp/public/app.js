@@ -28,6 +28,18 @@ function el(tag, props = {}, ...filhos) {
   return no;
 }
 
+// Marca da Exame: a palavra "exame" com o símbolo no lugar do "x" (mesmo desenho do site).
+const SIMBOLO =
+  '<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#0B2A6F"/>' +
+  '<path d="M15 15 L41 41" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>' +
+  '<path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function logo(classe) {
+  const palavra = el("span", { class: "palavra", role: "img", "aria-label": "Exame" });
+  palavra.innerHTML = `e${SIMBOLO}ame`; // conteúdo fixo, sem dados de terceiros
+  return el("span", { class: `logo ${classe}` }, palavra, el("span", { class: "sub" }, "Contabilidade e Consultoria"));
+}
+
 async function api(caminho, corpo, metodo) {
   const resposta = await fetch(`/api${caminho}`, {
     method: metodo || (corpo ? "POST" : "GET"),
@@ -121,6 +133,7 @@ function telaLogin() {
   const senha = el("input", { id: "senha", type: "password", autocomplete: "current-password", required: true });
   const botao = el("button", { class: "primario", type: "submit" }, "Entrar");
   return el("div", { class: "login" },
+    logo("grande"),
     el("form", {
       onsubmit: async (e) => {
         e.preventDefault();
@@ -135,7 +148,6 @@ function telaLogin() {
       },
     },
       el("h1", {}, "Central de Atendimento"),
-      el("p", {}, "Exame Contabilidade e Consultoria"),
       el("div", { class: "campo" }, el("label", { for: "usuario" }, "Usuário"), usuario),
       el("div", { class: "campo" }, el("label", { for: "senha" }, "Senha"), senha),
       erro,
@@ -149,6 +161,7 @@ function topo() {
   const abas = [["atendimentos", "Atendimentos"]];
   if (atendente.admin) abas.push(["atendentes", "Atendentes"], ["whatsapp", "WhatsApp"]);
   return el("header", { class: "topo" },
+    logo("barra"),
     el("span", { class: "marca" }, "Central de Atendimento"),
     el("nav", {}, abas.map(([id, nome]) =>
       el("button", {
