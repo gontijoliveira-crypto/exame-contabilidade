@@ -319,3 +319,147 @@ test("tela de entrada: lê os indicadores da fonte, guarda cache e mantém o úl
   assert.equal(g.dados().indicadores.selic.valor, 13.75);
   fs.rmSync(pasta, { recursive: true, force: true });
 });
+
+test("backup: planilha do dia, cópia do banco sem sessões e envio ao Drive", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const zlib = await import("node:zlib");
+  const { DatabaseSync } = await import("node:sqlite");
+  const { criarBackup, horarioDeBrasilia } = await import("../src/backup.js");
+
+  const c = await montar({ decisoes: [novo("fiscal", { resumo: "Guia do DAS" })] });
+  const ana = c.atendente("Ana", ["fiscal"]);
+  const auth = criarAuth(c.banco);
+  auth.entrar("ana@expo.test", "senha-de-teste"); // sessão aberta: não pode ir para o backup
+  c.cliente('Preciso da guia do DAS; valor "urgente"');
+  await c.central.processarTudo();
+  const [a] = c.banco.listarAtendimentos({});
+  await c.central.responder(a.id, ana, "Segue a guia.");
+
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "backup-"));
+  const enviados = [];
+  const b = criarBackup({
+    banco: c.banco, url: "https://script.google.com/macros/s/x/exec", segredo: "s3gr3do", pastaLocal: pasta, retencaoDias: 30,
+    log: { error() {} },
+    enviar: async (url, carga) => { enviados.push(carga); return { ok: true, arquivos: carga.arquivos.map((f) => ({ nome: f.nome, url: `https://drive/${f.nome}` })) }; },
+  });
+  const st = await b.executar("teste");
+  assert.equal(st.ok, true);
+  assert.equal(st.mensagensHoje, 2);
+
+  const { dia, ano, mes } = horarioDeBrasilia();
+  const carga = enviados[0];
+  assert.equal(carga.segredo, "s3gr3do");
+  assert.deepEqual(carga.retencao, { prefixo: "banco-", dias: 30 });
+  const planilha = carga.arquivos.find((f) => f.nome === `mensagens-${dia}.csv`);
+  assert.equal(planilha.pasta, `${ano}/${mes}`);
+  const csv = Buffer.from(planilha.base64, "base64").toString("utf8");
+  assert.ok(csv.startsWith("﻿Data;Hora;Número de WhatsApp"));
+  assert.match(csv, /"Preciso da guia do DAS; valor ""urgente"""/, "texto com ; e aspas fica entre aspas");
+  assert.match(csv, /;Enviada;Ana;Ana;Fiscal;/);
+
+  const copia = carga.arquivos.find((f) => f.nome.startsWith("banco-"));
+  const arquivoDb = path.join(pasta, "restaurado.db");
+  fs.writeFileSync(arquivoDb, zlib.gunzipSync(Buffer.from(copia.base64, "base64")));
+  const restaurado = new DatabaseSync(arquivoDb);
+  assert.equal(restaurado.prepare("SELECT COUNT(*) n FROM mensagens").get().n, 2);
+  assert.equal(restaurado.prepare("SELECT COUNT(*) n FROM sessoes").get().n, 0, "sessões de login não vão para o backup");
+  restaurado.close();
+  assert.equal(JSON.parse(fs.readFileSync(path.join(pasta, "status.json"), "utf8")).ok, true);
+  fs.rmSync(pasta, { recursive: true, force: true });
+});
+
+test("backup: dispara uma vez em cada horário de Brasília e registra falha do Drive", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { criarBackup } = await import("../src/backup.js");
+  const c = await montar();
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "backup-"));
+  let agora = new Date("2026-11-18T14:59:30Z"); // 11:59:30 em Brasília
+  let chamadas = 0;
+  const b = criarBackup({
+    banco: c.banco, url: "https://x/exec", segredo: "s", pastaLocal: pasta, relogio: () => agora, log: { error() {} },
+    enviar: async () => { chamadas++; throw new Error("sem internet"); },
+  });
+  assert.equal(b.verificarAgenda(), null);
+  agora = new Date("2026-11-18T15:00:05Z"); // 12:00:05
+  const st = await b.verificarAgenda();
+  assert.equal(chamadas, 1);
+  assert.equal(st.ok, false);
+  assert.match(st.erro, /sem internet/);
+  agora = new Date("2026-11-18T15:00:25Z"); // ainda 12:00: não repete
+  assert.equal(b.verificarAgenda(), null);
+  agora = new Date("2026-11-18T21:00:00Z"); // 18:00
+  await b.verificarAgenda();
+  assert.equal(chamadas, 2);
+  assert.ok(fs.readdirSync(pasta).some((n) => /^banco-2026-11-18-1200\.db\.gz$/.test(n)), "a cópia fica no servidor mesmo sem o Drive");
+  fs.rmSync(pasta, { recursive: true, force: true });
+});
+
+test("backup ponta a ponta: central → Apps Script (com o redirecionamento do Google) → pastas no Drive", async (t) => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const http = await import("node:http");
+  const { criarBackup, horarioDeBrasilia } = await import("../src/backup.js");
+  const { carregarAppsScriptDeBackup } = await import("./drive-simulado.js");
+
+  const drive = carregarAppsScriptDeBackup();
+  const segredo = drive.script.configurar();
+
+  // Como o Apps Script: o POST em /exec responde 302 e o resultado é lido num GET em outro endereço.
+  const respostas = new Map();
+  const servidor = http.createServer((req, res) => {
+    if (req.method === "POST" && req.url === "/exec") {
+      let corpo = "";
+      req.on("data", (d) => (corpo += d));
+      req.on("end", () => {
+        const saida = drive.script.doPost({ postData: { contents: corpo } });
+        const chave = String(respostas.size + 1);
+        respostas.set(chave, saida.texto);
+        res.writeHead(302, { Location: `/echo?k=${chave}` }).end();
+      });
+    } else if (req.method === "GET" && req.url.startsWith("/echo")) {
+      res.writeHead(200, { "Content-Type": "application/json" }).end(respostas.get(new URL(req.url, "http://x").searchParams.get("k")));
+    } else res.writeHead(404).end();
+  });
+  await new Promise((r) => servidor.listen(0, r));
+  t.after(() => { servidor.closeAllConnections(); servidor.close(); });
+  const url = `http://127.0.0.1:${servidor.address().port}/exec`;
+
+  const c = await montar({ decisoes: [novo("fiscal")] });
+  c.cliente("Preciso da guia do DAS");
+  await c.central.processarTudo();
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "backup-"));
+  let agora = new Date();
+  const b = criarBackup({ banco: c.banco, url, segredo, pastaLocal: pasta, retencaoDias: 30, relogio: () => agora, log: { error() {} } });
+
+  const st = await b.executar("teste");
+  assert.equal(st.ok, true, st.erro);
+  const { dia, ano, mes } = horarioDeBrasilia(agora);
+  const nomes = Object.keys(drive.arquivos());
+  assert.ok(nomes.includes(`Backups/${ano}/${mes}/mensagens-${dia}.csv`), nomes.join(", "));
+  assert.ok(nomes.some((n) => n.startsWith(`Backups/${ano}/${mes}/banco-${dia}-`)));
+  assert.ok(st.arquivos.every((a) => a.url.startsWith("https://drive.google.com/")));
+
+  // Segundo backup no mesmo dia: a planilha é substituída, não duplicada.
+  agora = new Date(agora.getTime() + 6 * 3600 * 1000);
+  await b.executar("teste 2");
+  const planilhas = Object.keys(drive.arquivos()).filter((n) => n.includes("mensagens-"));
+  assert.equal(new Set(planilhas).size, planilhas.length);
+
+  // As cópias do banco com mais de 30 dias vão para a lixeira; as planilhas ficam.
+  drive.envelhecer(40);
+  agora = new Date(agora.getTime() + 6 * 3600 * 1000);
+  const st3 = await b.executar("teste 3");
+  assert.ok(st3.apagados >= 1);
+  assert.ok(drive.naLixeira().some((n) => n.includes("banco-")));
+  assert.ok(Object.keys(drive.arquivos()).some((n) => n.includes(`mensagens-${dia}.csv`)));
+
+  // Segredo errado é recusado.
+  const recusa = JSON.parse(drive.script.doPost({ postData: { contents: JSON.stringify({ segredo: "errado", arquivos: [] }) } }).texto);
+  assert.equal(recusa.ok, false);
+  fs.rmSync(pasta, { recursive: true, force: true });
+});

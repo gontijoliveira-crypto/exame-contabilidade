@@ -280,6 +280,27 @@ export function abrirBanco(arquivo) {
       for (const id of ids) exec("UPDATE mensagens SET atendimento_id = ? WHERE id = ?", atendimentoId, id);
     },
 
+    // ---------- backup ----------
+    /** Mensagens desde uma data, com o número, o chat, o setor e o atendente, para a planilha de backup. */
+    mensagensDesde: (desdeIso) =>
+      todos(
+        `SELECT m.id, m.criado_em, m.direcao, m.autor_nome, m.autor_jid, m.tipo, m.texto, m.atendimento_id,
+           c.nome AS chat_nome, c.tipo AS chat_tipo, c.jid AS chat_jid, n.nome AS canal_nome,
+           t.nome AS atendente_nome, s.nome AS setor_nome, a.status AS atendimento_status
+         FROM mensagens m
+         JOIN chats c ON c.id = m.chat_id
+         JOIN canais n ON n.id = c.canal_id
+         LEFT JOIN atendentes t ON t.id = m.atendente_id
+         LEFT JOIN atendimentos a ON a.id = m.atendimento_id
+         LEFT JOIN setores s ON s.id = a.setor_id
+         WHERE m.criado_em >= ? ORDER BY m.id`,
+        desdeIso,
+      ),
+    /** Cópia consistente do banco inteiro num arquivo novo (pode rodar com a central em uso). */
+    copiarPara(arquivo) {
+      db.exec(`VACUUM INTO '${arquivo.replace(/'/g, "''")}'`);
+    },
+
     // ---------- atendimentos ----------
     criarAtendimento({ chatId, setorId, atendenteId, urgencia, resumo, motivo }) {
       const r = exec(

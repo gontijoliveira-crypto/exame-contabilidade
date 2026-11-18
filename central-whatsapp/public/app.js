@@ -97,6 +97,7 @@ async function atualizar() {
   await Promise.all([carregarLista(), carregarAberto()]);
   if (estado.aba === "atendentes") estado.atendentes = await api("/atendentes");
   if (estado.aba === "whatsapp") estado.canais = await api("/canais");
+  if (estado.aba === "backup") estado.backup = await api("/backup");
   desenhar();
 }
 
@@ -130,7 +131,7 @@ async function iniciar() {
     const evento = JSON.parse(e.data);
     if (evento.canalId) estado.eu = await api("/eu"); // mudou a conexão ou o cadastro de um número
     // Não refaz a tela enquanto alguém preenche um formulário da administração.
-    const preenchendo = estado.aba === "atendentes" || (estado.aba === "whatsapp" && estado.eu.modo === "simulador");
+    const preenchendo = estado.aba === "atendentes" || estado.aba === "backup" || (estado.aba === "whatsapp" && estado.eu.modo === "simulador");
     if (!preenchendo) await atualizar();
   };
 }
@@ -315,7 +316,7 @@ function topo() {
     : ativos.length === 1 ? (conectados ? "WhatsApp conectado" : "WhatsApp desconectado")
     : `${conectados} de ${ativos.length} números conectados`;
   const abas = [["atendimentos", "Atendimentos"]];
-  if (atendente.admin) abas.push(["atendentes", "Atendentes"], ["whatsapp", "WhatsApp"]);
+  if (atendente.admin) abas.push(["atendentes", "Atendentes"], ["whatsapp", "WhatsApp"], ["backup", "Backup"]);
   return el("header", { class: "topo" },
     logo("barra"),
     el("span", { class: "marca" }, "Central de Atendimento"),
@@ -597,6 +598,46 @@ function telaWhatsapp() {
   );
 }
 
+function telaBackup() {
+  const b = estado.backup || {};
+  const u = b.ultimo;
+  const quando = (iso) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
+  const kb = (n) => (n >= 1048576 ? `${(n / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+  const botao = el("button", {
+    class: "primario",
+    onclick: async () => {
+      botao.disabled = true;
+      botao.textContent = "Fazendo backup…";
+      try {
+        await api("/backup/agora", {});
+      } catch (erro) {
+        alert(erro.message);
+      }
+      estado.backup = await api("/backup");
+      desenhar();
+    },
+  }, "Fazer backup agora");
+  return el("main", { class: "pagina" },
+    el("div", { class: "cartao" },
+      el("h2", {}, "Backup das mensagens"),
+      el("p", {}, `Todos os dias, às ${(b.horarios || []).join(", ")} (horário de Brasília), a central grava no Google Drive, na pasta "Central de Atendimento WhatsApp › Backups":`),
+      el("ul", {},
+        el("li", {}, "uma planilha com as mensagens de cada dia (mensagens-AAAA-MM-DD.csv), atualizada a cada backup;"),
+        el("li", {}, `uma cópia completa do banco (banco-AAAA-MM-DD-HHMM.db.gz), guardada por ${b.retencaoDias || 30} dias, para restaurar a central se precisar.`)),
+      !b.configurado && el("p", { class: "faixa-aviso" }, "O envio ao Google Drive ainda não foi configurado (BACKUP_URL e BACKUP_SEGREDO). Enquanto isso, as cópias ficam só no servidor."),
+      el("div", { class: "acoes" }, botao)),
+    el("div", { class: "cartao" },
+      el("h3", {}, "Último backup"),
+      !u ? el("p", { class: "dica" }, "Nenhum backup feito ainda.") : el("div", {},
+        el("p", {},
+          el("span", { class: `chip ${u.ok ? "ok" : "alta"}` }, u.ok ? "Concluído" : "Com problema"), " ",
+          `${quando(u.quando)} · ${u.motivo}` + (u.mensagensHoje != null ? ` · ${u.mensagensHoje} ${u.mensagensHoje === 1 ? "mensagem" : "mensagens"} hoje` : "") + (u.tamanhoBanco ? ` · banco com ${kb(u.tamanhoBanco)}` : "")),
+        u.erro && el("p", { class: "erro" }, u.erro),
+        u.arquivos?.length > 0 && el("ul", {}, u.arquivos.map((a) =>
+          el("li", {}, a.url ? el("a", { href: a.url, target: "_blank", rel: "noopener" }, a.nome) : a.nome))))),
+  );
+}
+
 function desenhar() {
   // Preserva o foco/texto do campo de resposta quando a tela é refeita por um evento.
   const ativo = document.activeElement;
@@ -609,7 +650,7 @@ function desenhar() {
     return raiz.replaceChildren(telasDeAcesso[estado.acesso]());
   }
 
-  const telas = { atendimentos: telaAtendimentos, atendentes: telaAtendentes, whatsapp: telaWhatsapp };
+  const telas = { atendimentos: telaAtendimentos, atendentes: telaAtendentes, whatsapp: telaWhatsapp, backup: telaBackup };
   raiz.replaceChildren(el("div", { class: "tela" },
     topo(),
     !estado.eu.iaAtiva && el("div", { class: "faixa" }, "Triagem por IA desligada (chave da API não configurada): todas as mensagens vão para o setor padrão."),

@@ -3,6 +3,7 @@ import { Central } from "./central.js";
 import { criarClassificador } from "./classificador.js";
 import { carregarEntrada, carregarMarca, carregarSetores, config } from "./config.js";
 import { criarFonteDeEntrada } from "./entrada.js";
+import { criarBackup } from "./backup.js";
 import { criarEnviadorDeEmail } from "./email.js";
 import { abrirBanco } from "./db.js";
 import { criarServidor } from "./servidor.js";
@@ -57,6 +58,10 @@ const entrada = criarFonteDeEntrada({
 });
 entrada.iniciar(); // sem esperar: a tela de entrada funciona mesmo sem os indicadores
 
+const backup = criarBackup({ banco, ...config.backup });
+backup.iniciar();
+if (!backup.configurado) console.warn("AVISO: backup no Google Drive não configurado (BACKUP_URL e BACKUP_SEGREDO). As cópias ficam só no servidor.");
+
 const app = criarServidor({
   banco,
   central,
@@ -67,6 +72,7 @@ const app = criarServidor({
   email,
   urlPainel: config.urlPainel,
   entrada,
+  backup,
   cookieSeguro: process.env.NODE_ENV === "production",
 });
 

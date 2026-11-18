@@ -19,6 +19,14 @@ export const config = {
   adminEmail: (env.ADMIN_EMAIL || "admin@escritorio.com.br").trim().toLowerCase(),
   // Endereço pelo qual os atendentes abrem o painel; usado nos links enviados por e-mail.
   urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || env.PORT || 3000}`).replace(/\/+$/, ""),
+  backup: {
+    // Endereço do app da Web do Apps Script de backup (termina em /exec) e o segredo combinado com ele.
+    url: env.BACKUP_URL || "",
+    segredo: env.BACKUP_SEGREDO || "",
+    horarios: (env.BACKUP_HORARIOS || "00:00,06:00,12:00,18:00").split(",").map((h) => h.trim()).filter(Boolean),
+    retencaoDias: Number(env.BACKUP_RETENCAO_DIAS || 30),
+    pastaLocal: path.join(pastaDados, "backups"),
+  },
   smtp: {
     host: env.SMTP_HOST || "",
     porta: Number(env.SMTP_PORTA || 587),

@@ -129,6 +129,22 @@ quando ele mudar). Os dados vêm do `indicadores.json` que a Central atualiza to
 (endereço em `config/entrada.json`; o arquivo precisa estar compartilhado como "qualquer pessoa com o
 link: leitor"). A central guarda a última versão em `dados/` e, sem indicadores, mostra o cartão simples.
 
+## Backup no Google Drive
+
+Às 00:00, 06:00, 12:00 e 18:00 (Brasília; `BACKUP_HORARIOS`), a central envia ao Google Drive, pasta
+"Central de Atendimento WhatsApp › Backups › AAAA › MM":
+
+- `mensagens-AAAA-MM-DD.csv`: planilha das mensagens do dia (a de hoje e a de ontem são regravadas a
+  cada backup, então a do dia anterior fecha completa no backup da meia-noite);
+- `banco-AAAA-MM-DD-HHMM.db.gz`: cópia completa do banco, sem as sessões de login, para restauração;
+  as com mais de `BACKUP_RETENCAO_DIAS` (30) dias vão para a lixeira.
+
+O envio passa por um Apps Script (`apps-script/backup/`), publicado como app da Web, que grava no Drive
+do dono; a central só precisa de `BACKUP_URL` e `BACKUP_SEGREDO`. As 8 cópias mais recentes do banco
+ficam também em `dados/backups/`. Se o servidor ficar parado e perder um horário, ele faz um backup um
+minuto depois de ligar. A aba **Backup** do painel (administradores) mostra o último backup e tem o
+botão "Fazer backup agora".
+
 ## Publicação
 
 O `Dockerfile` publica a central em qualquer hospedagem com Docker (Railway, Render, Fly.io ou um

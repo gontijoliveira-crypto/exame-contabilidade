@@ -32,7 +32,7 @@ function validarSenha(senha) {
   return senha;
 }
 
-export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, entrada = null, cookieSeguro = false, log = console }) {
+export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, entrada = null, backup = null, cookieSeguro = false, log = console }) {
   const app = express();
   app.disable("x-powered-by");
   // Atrás de um proxy reverso (Nginx, Caddy), use TRUST_PROXY=1 para req.ip ser o IP real do usuário.
@@ -272,6 +272,13 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, ema
     await whatsapp.desvincularCanal(canal.id);
     central.emit("mudou", { canalId: canal.id });
     res.json({ ok: true });
+  });
+
+  // Backup no Google Drive
+  app.get("/api/backup", exigirAdmin, (req, res) => res.json(backup ? backup.status() : { configurado: false, ultimo: null }));
+  app.post("/api/backup/agora", exigirAdmin, async (req, res) => {
+    if (!backup) throw new ErroHttp(503, "Backup indisponível.");
+    res.json(await backup.executar(`manual (${req.atendente.nome})`));
   });
 
   app.get("/api/atendentes", exigirAdmin, (req, res) => res.json(banco.listarAtendentes().map(publico)));
