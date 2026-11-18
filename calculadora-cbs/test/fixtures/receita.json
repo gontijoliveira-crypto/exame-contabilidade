@@ -1,0 +1,1039 @@
+{
+ "integral": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "000",
+     "cClassTrib": "000001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "000",
+        "cClassTrib": "000001",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "vIBSUF": "1.00"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "1.00",
+         "gCBS": {
+          "pCBS": "0.90",
+          "vCBS": "9.00"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,90%.",
+         "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,10%.",
+         "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,00%."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "1.00"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "1.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "9.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "reducao60": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "011",
+     "cClassTrib": "011001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "011",
+        "cClassTrib": "011001",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "gRed": {
+           "pRedAliq": "60.00",
+           "pAliqEfet": "0.04"
+          },
+          "vIBSUF": "0.40"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "gRed": {
+           "pRedAliq": "60.00",
+           "pAliqEfet": "0.00"
+          },
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "0.40",
+         "gCBS": {
+          "pCBS": "0.90",
+          "gRed": {
+           "pRedAliq": "60.00",
+           "pAliqEfet": "0.36"
+          },
+          "vCBS": "3.60"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 236, tributada conforme Tributação com alíquotas uniformes reduzidas em 60%. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,90%, sendo que esse regime define uma redução de 60,00% na alíquota.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 236, tributada conforme Tributação com alíquotas uniformes reduzidas em 60%. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,10%, sendo que esse regime define uma redução de 60,00% na alíquota.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 236, tributada conforme Tributação com alíquotas uniformes reduzidas em 60%. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,00%, sendo que esse regime define uma redução de 60,00% na alíquota."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.40"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "0.40",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "3.60",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "aliquotaZero": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "200",
+     "cClassTrib": "200003",
+     "ncm": "10063021"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "200",
+        "cClassTrib": "200003",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "gRed": {
+           "pRedAliq": "100.00",
+           "pAliqEfet": "0.00"
+          },
+          "vIBSUF": "0.00"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "gRed": {
+           "pRedAliq": "100.00",
+           "pAliqEfet": "0.00"
+          },
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "0.00",
+         "gCBS": {
+          "pCBS": "0.90",
+          "gRed": {
+           "pRedAliq": "100.00",
+           "pAliqEfet": "0.00"
+          },
+          "vCBS": "0.00"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de zero.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de zero.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de zero."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.00"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "semIncidencia": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "400",
+     "cClassTrib": "400001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "400",
+        "cClassTrib": "400001",
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 157, tributada conforme Isenção. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 157, tributada conforme Isenção. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 157, tributada conforme Isenção. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "0.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.00"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "diferimento": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "510",
+     "cClassTrib": "510001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "510",
+        "cClassTrib": "510001",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "gDif": {
+           "pDif": "100.00",
+           "vDif": "1.00"
+          },
+          "vIBSUF": "0.00"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "gDif": {
+           "pDif": "100.00",
+           "vDif": "0.00"
+          },
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "0.00",
+         "gCBS": {
+          "pCBS": "0.90",
+          "gDif": {
+           "pDif": "100.00",
+           "vDif": "9.00"
+          },
+          "vCBS": "0.00"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 28, § 1º, tributada conforme Diferimento. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 28, § 1º, tributada conforme Diferimento. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 28, § 1º, tributada conforme Diferimento. A base de cálculo utilizada é de R$ 1.000,00, sendo que esta operação não possui alíquota."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "1.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.00"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "9.00",
+        "vDevTrib": "0.00",
+        "vCBS": "0.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "baseReduzida": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "222",
+     "cClassTrib": "222001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "222",
+        "cClassTrib": "222001",
+        "gIBSCBS": {
+         "vBC": "500.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "vIBSUF": "0.50"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "0.50",
+         "gCBS": {
+          "pCBS": "0.90",
+          "vCBS": "4.50"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 12 § 8º, tributada conforme Redução de base de cálculo. A base de cálculo utilizada é de R$ 500,00, reduzida em 50%, com alíquota de 0,90%.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 12 § 8º, tributada conforme Redução de base de cálculo. A base de cálculo utilizada é de R$ 500,00, reduzida em 50%, com alíquota de 0,10%.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 12 § 8º, tributada conforme Redução de base de cálculo. A base de cálculo utilizada é de R$ 500,00, reduzida em 50%, com alíquota de 0,00%."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "500.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.50"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "0.50",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "4.50",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "aliquotaNaoDefinida": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "010",
+     "cClassTrib": "010002"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073",
+    "x-warning-dados-simulados": "5"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "010",
+        "cClassTrib": "010002",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.10",
+          "vIBSUF": "1.00"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.00",
+          "vIBSMun": "0.00"
+         },
+         "vIBS": "1.00",
+         "gCBS": {
+          "pCBS": "0.90",
+          "vCBS": "9.00"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em Art. 233, tributada conforme Tributação com alíquotas uniformes - operações do setor financeiro. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,90%.",
+         "ibsUF": "Operação de consumo com enquadramento legal em Art. 233, tributada conforme Tributação com alíquotas uniformes - operações do setor financeiro. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,10%.",
+         "ibsMun": "Operação de consumo com enquadramento legal em Art. 233, tributada conforme Tributação com alíquotas uniformes - operações do setor financeiro. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,00%."
+        }
+       }
+      },
+      "calculoSimulado": false
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "1.00"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.00"
+        },
+        "vIBS": "1.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "9.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "simulado2027": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2027-03-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "000",
+     "cClassTrib": "000001",
+     "aliquotasNominais": {
+      "cbs": 8.8,
+      "ibsEstadual": 0.05,
+      "ibsMunicipal": 0.05
+     }
+    }
+   ]
+  },
+  "resposta": {
+   "status": 200,
+   "cabecalhos": {
+    "content-type": "application/json",
+    "x-calc-app-version": "1.7.0-753903df",
+    "x-calc-db-version": "V0073",
+    "x-warning-dados-simulados": "6"
+   },
+   "corpo": {
+    "objetos": [
+     {
+      "nObj": 1,
+      "tribCalc": {
+       "IBSCBS": {
+        "CST": "000",
+        "cClassTrib": "000001",
+        "gIBSCBS": {
+         "vBC": "1000.00",
+         "gIBSUF": {
+          "pIBSUF": "0.05",
+          "vIBSUF": "0.50"
+         },
+         "gIBSMun": {
+          "pIBSMun": "0.05",
+          "vIBSMun": "0.50"
+         },
+         "vIBS": "1.00",
+         "gCBS": {
+          "pCBS": "8.80",
+          "vCBS": "88.00"
+         }
+        },
+        "memoriaCalculo": {
+         "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 8,80%.",
+         "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,05%.",
+         "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 1.000,00, com alíquota de 0,05%."
+        }
+       }
+      },
+      "calculoSimulado": true
+     }
+    ],
+    "total": {
+     "tribCalc": {
+      "IBSCBSTot": {
+       "vBCIBSCBS": "1000.00",
+       "gIBS": {
+        "gIBSUF": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSUF": "0.50"
+        },
+        "gIBSMun": {
+         "vDif": "0.00",
+         "vDevTrib": "0.00",
+         "vIBSMun": "0.50"
+        },
+        "vIBS": "1.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gCBS": {
+        "vDif": "0.00",
+        "vDevTrib": "0.00",
+        "vCBS": "88.00",
+        "vCredPres": "0.00",
+        "vCredPresCondSus": "0.00"
+       },
+       "gMono": {
+        "vIBSMono": "0.00",
+        "vCBSMono": "0.00",
+        "vIBSMonoReten": "0.00",
+        "vCBSMonoReten": "0.00",
+        "vIBSMonoRet": "0.00",
+        "vCBSMonoRet": "0.00"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "erroNcm": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "200",
+     "cClassTrib": "200003"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "NCM completo não informado",
+    "status": 422,
+    "title": "NCM completo não informado",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/ncm-completo-nao-informado"
+   }
+  }
+ },
+ "erroNbs": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "200",
+     "cClassTrib": "200028"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "NBS completo não informado",
+    "status": 422,
+    "title": "NBS completo não informado",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/nbs-completo-nao-informado"
+   }
+  }
+ },
+ "erroTributacaoRegular": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "550",
+     "cClassTrib": "550001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "Dados da tributação regular devem ser informados para cClassTrib 550001 e CST 550",
+    "status": 422,
+    "title": "Grupo de tributação regular não informado",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/grupo-tributacao-regular-nao-informado"
+   }
+  }
+ },
+ "erroEmDesenvolvimento": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "620",
+     "cClassTrib": "620001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "A classificação tributária 620001 ainda não possui tratamento tributário implementado na Calculadora. Essa funcionalidade está prevista no roadmap e será disponibilizada em versão futura.",
+    "status": 422,
+    "title": "Classificação tributária em desenvolvimento",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/erro-falta-implementacao"
+   }
+  }
+ },
+ "erroNaoEncontrada": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "220",
+     "cClassTrib": "220001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 404,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "Classificação tributária não encontrada para código 220001 e data 2026-11-18 (CBS e IBS)",
+    "status": 404,
+    "title": "Classificação tributária não encontrada",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/classificacao-tributaria-nao-encontrada"
+   }
+  }
+ },
+ "erroImpostoSeletivo": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "000",
+     "cClassTrib": "000001",
+     "ncm": "24021000"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "Dados do Imposto Seletivo devem ser informados para NCM 24021000 e data 2026-11-18",
+    "status": 422,
+    "title": "Dados do Imposto Seletivo não informados",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/dados-imposto-seletivo-nao-informados"
+   }
+  }
+ },
+ "erroMunicipioUf": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2026-11-18T12:00:00-03:00",
+   "municipio": 3106200,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "000",
+     "cClassTrib": "000001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "Município de código 3106200 não pertence à UF de sigla GO",
+    "status": 422,
+    "title": "Município não pertencente à UF",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/municipio-nao-pertencente-uf"
+   }
+  }
+ },
+ "erroAliquotasAusentes": {
+  "pedido": {
+   "id": "fixture",
+   "versao": "1.0.0",
+   "dhFatoGerador": "2027-03-18T12:00:00-03:00",
+   "municipio": 5201108,
+   "uf": "GO",
+   "itens": [
+    {
+     "numero": 1,
+     "baseCalculo": 1000,
+     "cst": "000",
+     "cClassTrib": "000001"
+    }
+   ]
+  },
+  "resposta": {
+   "status": 422,
+   "cabecalhos": {
+    "content-type": "application/problem+json"
+   },
+   "corpo": {
+    "detail": "As alíquotas nominais (os três campos cbs, ibsEstadual e ibsMunicipal) devem ser informadas para operações com fato gerador a partir de 01/01/2027",
+    "status": 422,
+    "title": "Alíquotas nominais não informadas",
+    "type": "https://piloto-cbs.tributos.gov.br/errors/aliquotas-nominais-nao-informadas"
+   }
+  }
+ }
+}

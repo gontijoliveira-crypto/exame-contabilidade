@@ -1,0 +1,15 @@
+{
+  "name": "calculadora-cbs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Calculadora de CBS e IBS ligada à API da Calculadora da Reforma Tributária do Consumo (Receita Federal)",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "_comentario": "Apoio à simulação de datas a partir de 2027, quando a Calculadora da Receita Federal exige que as alíquotas sejam informadas. Em cada período: 'preencher' são alíquotas que a tela já traz preenchidas (a pessoa pode alterar); 'exemplo' aparece só como sugestão dentro do campo vazio; 'nota' é o texto explicativo. Percentuais entre aspas, com ponto decimal. Revise este arquivo sempre que a legislação ou as alíquotas mudarem.",
+  "periodos": [
+    {
+      "de": "2027-01-01",
+      "ate": "2027-12-31",
+      "preencher": { "ibsEstadual": "0.05", "ibsMunicipal": "0.05" },
+      "exemplo": { "cbs": "11.2" },
+      "nota": "IBS: em 2027 e 2028 a alíquota é de 0,05% estadual mais 0,05% municipal (ADCT, art. 127). CBS: a alíquota de 2027 ainda depende de resolução do Senado. Em 28/10/2026 o TCU calculou a alíquota de referência em 11,3% (Acórdão 2933/2026); se ela for confirmada, a CBS cobrada será de 11,2% (a referência menos 0,1 ponto percentual). Informação de 18/11/2026."
+    },
+    {
+      "de": "2028-01-01",
+      "ate": "2028-12-31",
+      "preencher": { "ibsEstadual": "0.05", "ibsMunicipal": "0.05" },
+      "nota": "IBS: em 2027 e 2028 a alíquota é de 0,05% estadual mais 0,05% municipal (ADCT, art. 127). CBS: a alíquota de 2028 será fixada pelo Senado em 2027. Informe a alíquota que deseja simular."
+    },
+    {
+      "de": "2029-01-01",
+      "ate": "2033-12-31",
+      "nota": "De 2029 a 2032 o IBS aumenta aos poucos, enquanto o ICMS e o ISS diminuem; em 2033 o IBS passa a valer por inteiro. As alíquotas de cada ano são fixadas no ano anterior. Informe as alíquotas que deseja simular."
+    }
+  ]
+}
