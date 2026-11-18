@@ -18,21 +18,22 @@ export class Central extends EventEmitter {
     this.esperaMs = esperaMs;
     this.assinarRespostas = assinarRespostas;
     this.log = log;
-    this.pendentes = new Map(); // chatJid -> { ids: number[], timer }
-    this.filas = new Map(); // chatJid -> Promise (uma triagem por chat de cada vez)
+    this.pendentes = new Map(); // chatId -> { ids: number[], timer }
+    this.filas = new Map(); // chatId -> Promise (uma triagem por chat de cada vez)
   }
 
   /**
    * Entrada de uma mensagem vinda do WhatsApp.
-   * msg: { waId, chatJid, chatNome, chatTipo, autorJid, autorNome, texto, tipo, criadoEm, enviadaPorNos }
+   * msg: { canalId, waId, chatJid, chatNome, chatTipo, autorJid, autorNome, texto, tipo, criadoEm, enviadaPorNos }
    */
   receberMensagem(msg) {
-    this.banco.salvarChat({ jid: msg.chatJid, tipo: msg.chatTipo, nome: msg.chatNome });
+    const chatId = this.banco.salvarChat({ canalId: msg.canalId, jid: msg.chatJid, tipo: msg.chatTipo, nome: msg.chatNome });
+    msg = { ...msg, chatId };
 
     // Mensagem enviada pelo próprio número fora do painel (pelo celular do escritório):
     // fica registrada no atendimento mais recente do chat, sem passar pela triagem.
     if (msg.enviadaPorNos) {
-      const aberto = this.banco.atendimentosAbertosDoChat(msg.chatJid)[0];
+      const aberto = this.banco.atendimentosAbertosDoChat(chatId)[0];
       const id = this.banco.inserirMensagem({ ...msg, direcao: "saida", autorNome: "Escritório (celular)", atendimentoId: aberto?.id });
       if (id && aberto) {
         this.banco.atualizarAtendimento(aberto.id, { pendente: 0 });
@@ -45,38 +46,38 @@ export class Central extends EventEmitter {
     if (!id) return; // duplicada
 
     // Junta mensagens seguidas do mesmo chat numa única triagem.
-    const p = this.pendentes.get(msg.chatJid) || { ids: [], timer: null };
+    const p = this.pendentes.get(chatId) || { ids: [], timer: null };
     p.ids.push(id);
     clearTimeout(p.timer);
-    p.timer = setTimeout(() => this.processarChat(msg.chatJid), this.esperaMs);
-    this.pendentes.set(msg.chatJid, p);
+    p.timer = setTimeout(() => this.processarChat(chatId), this.esperaMs);
+    this.pendentes.set(chatId, p);
   }
 
   /** Faz a triagem das mensagens acumuladas de um chat. Devolve quando terminar. */
-  processarChat(chatJid) {
-    const p = this.pendentes.get(chatJid);
-    if (!p) return this.filas.get(chatJid) || Promise.resolve();
+  processarChat(chatId) {
+    const p = this.pendentes.get(chatId);
+    if (!p) return this.filas.get(chatId) || Promise.resolve();
     clearTimeout(p.timer);
-    this.pendentes.delete(chatJid);
+    this.pendentes.delete(chatId);
 
-    const anterior = this.filas.get(chatJid) || Promise.resolve();
+    const anterior = this.filas.get(chatId) || Promise.resolve();
     const atual = anterior
-      .then(() => this.#triar(chatJid, p.ids))
-      .catch((erro) => this.log.error("Falha ao processar chat", chatJid, erro));
-    this.filas.set(chatJid, atual);
+      .then(() => this.#triar(chatId, p.ids))
+      .catch((erro) => this.log.error("Falha ao processar chat", chatId, erro));
+    this.filas.set(chatId, atual);
     return atual;
   }
 
   /** Processa tudo o que estiver aguardando (usado nos testes e ao encerrar). */
   async processarTudo() {
-    await Promise.all([...this.pendentes.keys()].map((jid) => this.processarChat(jid)));
+    await Promise.all([...this.pendentes.keys()].map((id) => this.processarChat(id)));
     await Promise.all(this.filas.values());
   }
 
-  async #triar(chatJid, ids) {
-    const chat = this.banco.buscarChat(chatJid);
+  async #triar(chatId, ids) {
+    const chat = this.banco.buscarChat(chatId);
     const novas = this.banco.buscarMensagens(ids);
-    const abertos = this.banco.atendimentosAbertosDoChat(chatJid);
+    const abertos = this.banco.atendimentosAbertosDoChat(chatId);
     const setores = this.banco.listarSetores();
     const decisao = await this.#decidir({ chat, novas, abertos, setores });
 
@@ -91,9 +92,9 @@ export class Central extends EventEmitter {
       this.banco.atualizarAtendimento(atendimentoId, campos);
     } else {
       atendimentoId = this.banco.criarAtendimento({
-        chatJid,
+        chatId,
         setorId: decisao.setor_id,
-        atendenteId: this.banco.atendenteMenosOcupado(decisao.setor_id),
+        atendenteId: this.banco.atendenteMenosOcupado(decisao.setor_id, chat.canal_id),
         urgencia: decisao.urgencia,
         resumo: decisao.resumo,
         motivo: decisao.motivo,
@@ -121,7 +122,7 @@ export class Central extends EventEmitter {
 
     let d;
     try {
-      const historico = this.banco.ultimasMensagensDoChat(chat.jid, HISTORICO_PARA_TRIAGEM, novas[0].id);
+      const historico = this.banco.ultimasMensagensDoChat(chat.id, HISTORICO_PARA_TRIAGEM, novas[0].id);
       d = await this.classificar({ chat, novas, historico, abertos, setores });
     } catch (erro) {
       this.log.error("Triagem por IA falhou:", erro.message);
@@ -139,10 +140,10 @@ export class Central extends EventEmitter {
     if (!a) throw new Error("Atendimento não encontrado");
     const enviado = this.assinarRespostas ? `*${atendente.nome} (${a.setor_nome}):*\n${texto}` : texto;
 
-    const { waId } = await this.whatsapp.enviarTexto(a.chat_jid, enviado);
+    const { waId } = await this.whatsapp.enviarTexto(a.canal_id, a.chat_jid, enviado);
     const registro = { atendimentoId, autorNome: atendente.nome, atendenteId: atendente.id, texto };
-    const inserida = this.banco.inserirMensagem({ ...registro, waId, chatJid: a.chat_jid, direcao: "saida" });
-    if (!inserida) this.banco.atribuirMensagem(waId, registro);
+    const inserida = this.banco.inserirMensagem({ ...registro, waId, chatId: a.chat_id, direcao: "saida" });
+    if (!inserida) this.banco.atribuirMensagem(a.chat_id, waId, registro);
     this.banco.atualizarAtendimento(atendimentoId, {
       pendente: 0,
       status: "em_atendimento",
@@ -158,9 +159,10 @@ export class Central extends EventEmitter {
 
   /** Corrige o encaminhamento: muda de setor e redistribui (ou entrega a um atendente específico). */
   transferir(atendimentoId, setorId, atendenteId = null) {
+    const a = this.banco.buscarAtendimento(atendimentoId);
     this.banco.atualizarAtendimento(atendimentoId, {
       setor_id: setorId,
-      atendente_id: atendenteId ?? this.banco.atendenteMenosOcupado(setorId),
+      atendente_id: atendenteId ?? this.banco.atendenteMenosOcupado(setorId, a.canal_id),
       status: "aberto",
     });
     this.emit("mudou", { atendimentoId });

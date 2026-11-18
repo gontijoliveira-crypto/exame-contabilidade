@@ -61,6 +61,7 @@ h1, h2, h3, button, .chip, th { font-family: var(--titulo); }
 .chip.aviso { background: #FFF6D1; color: #8A6400; }
 .chip.alta { background: var(--alerta-fundo); color: var(--alerta); }
 .chip.setor { background: #E3ECFF; color: var(--azul); }
+.chip.canal { background: #FFF6D1; color: #8A6400; }
 .chip.neutro { background: #ECEFF6; color: var(--suave); }
 .faixa { background: #FFF6D1; color: #8A6400; padding: 7px 16px; font-size: 13.5px; border-bottom: 1px solid #F0DE9A; }
 
@@ -111,6 +112,10 @@ th { font-size: 13px; color: var(--suave); }
 .marcar { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .marcar label { display: flex; align-items: center; gap: 6px; font-weight: 400; color: var(--texto); font-size: 14px; margin: 0; }
 .marcar input { width: auto; }
+.dica { color: var(--suave); font-size: 13.5px; margin: 0 0 12px; }
+.linha-canal { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.linha-canal h3 { margin: 0; }
+.linha-canal .numero { color: var(--suave); font-size: 14px; }
 .qr { display: block; margin: 12px 0; border: 1px solid var(--borda); border-radius: 8px; }
 
 @media (max-width: 800px) {

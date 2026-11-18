@@ -4,6 +4,7 @@ import { criarClassificador } from "./classificador.js";
 import { carregarSetores, config } from "./config.js";
 import { abrirBanco } from "./db.js";
 import { criarServidor } from "./servidor.js";
+import { criarGerenciadorDeCanais } from "./whatsapp/canais.js";
 
 const banco = abrirBanco(config.arquivoBanco);
 const { setores, setorPadrao } = carregarSetores();
@@ -12,21 +13,15 @@ banco.sincronizarSetores(setores);
 // Primeiro acesso: cria o administrador.
 if (banco.contarAtendentes() === 0) {
   const senha = config.adminSenha || gerarSenha();
-  banco.criarAtendente({ nome: "Administrador", usuario: config.adminUsuario, senhaHash: gerarHash(senha), admin: true });
-  console.log(`\nAdministrador criado. Usuário: ${config.adminUsuario}`);
+  banco.criarAtendente({ nome: "Administrador", email: config.adminEmail, senhaHash: gerarHash(senha), admin: true });
+  console.log(`\nAdministrador criado. E-mail de acesso: ${config.adminEmail}`);
   if (!config.adminSenha) console.log(`Senha gerada (anote, ela não será mostrada de novo): ${senha}`);
 }
 
-let whatsapp;
-if (config.whatsappModo === "baileys") {
-  const { criarBaileys } = await import("./whatsapp/baileys.js");
-  whatsapp = criarBaileys({ pastaSessao: config.pastaSessaoWhatsapp });
-} else if (config.whatsappModo === "simulador") {
-  const { criarSimulador } = await import("./whatsapp/simulador.js");
-  whatsapp = criarSimulador();
-} else {
-  throw new Error(`WHATSAPP_MODO inválido: "${config.whatsappModo}" (use "baileys" ou "simulador")`);
-}
+// Primeiro uso: já deixa um número cadastrado, pronto para ler o QR code.
+if (banco.listarCanais({ inativos: true }).length === 0) banco.criarCanal("WhatsApp 1");
+
+const whatsapp = await criarGerenciadorDeCanais({ modo: config.whatsappModo, pastaSessoes: config.pastaSessoesWhatsapp });
 
 const classificar = criarClassificador({ modelo: config.claudeModelo, setores });
 if (!classificar) {
@@ -44,7 +39,7 @@ const central = new Central({
 central.setMaxListeners(0); // um ouvinte por painel aberto
 
 whatsapp.aoReceberMensagem((msg) => central.receberMensagem(msg));
-whatsapp.aoMudarEstado((estado) => central.emit("mudou", { whatsapp: estado.status }));
+whatsapp.aoMudarEstado((canalId, estado) => central.emit("mudou", { canalId, whatsapp: estado.status }));
 
 const app = criarServidor({
   banco,
@@ -59,7 +54,9 @@ const servidor = app.listen(config.porta, () => {
   console.log(`\nPainel da central: http://localhost:${config.porta}  (WhatsApp: modo ${config.whatsappModo})`);
 });
 
-await whatsapp.iniciar();
+for (const canal of banco.listarCanais()) {
+  whatsapp.iniciarCanal(canal.id).catch((erro) => console.error(`Falha ao iniciar o número "${canal.nome}":`, erro.message));
+}
 
 async function encerrar() {
   console.log("\nEncerrando...");

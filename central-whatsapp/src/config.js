@@ -16,13 +16,13 @@ export const config = {
   porta: Number(env.PORTA || 3000),
   whatsappModo: env.WHATSAPP_MODO || "simulador",
   claudeModelo: env.CLAUDE_MODELO || "claude-opus-5-5",
-  adminUsuario: env.ADMIN_USUARIO || "admin",
+  adminEmail: (env.ADMIN_EMAIL || "admin@examecontabilidade.com.br").trim().toLowerCase(),
   adminSenha: env.ADMIN_SENHA || "",
   esperaTriagemMs: Number(env.ESPERA_TRIAGEM_SEGUNDOS ?? 8) * 1000,
   assinarRespostas: (env.ASSINAR_RESPOSTAS || "true") !== "false",
   pastaDados,
   arquivoBanco: path.join(pastaDados, "central.db"),
-  pastaSessaoWhatsapp: path.join(pastaDados, "sessao-whatsapp"),
+  pastaSessoesWhatsapp: path.join(pastaDados, "sessoes-whatsapp"),
 };
 
 export function carregarSetores() {

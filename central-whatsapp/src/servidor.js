@@ -1,6 +1,6 @@
 import path from "node:path";
 import express from "express";
-import { COOKIE, gerarHash, lerCookie } from "./auth.js";
+import { COOKIE, gerarHash, lerCookie, normalizarEmail } from "./auth.js";
 
 const publico = ({ senha_hash, ...resto }) => resto;
 
@@ -28,11 +28,12 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
 
   // ---------- autenticação ----------
   app.post("/api/login", (req, res) => {
-    const { usuario, senha } = req.body || {};
-    if (typeof usuario !== "string" || typeof senha !== "string") throw new ErroHttp(400, "Informe usuário e senha.");
+    const { senha } = req.body || {};
+    const email = normalizarEmail(req.body?.email);
+    if (!email || typeof senha !== "string") throw new ErroHttp(400, "Informe e-mail e senha.");
     let sessao;
     try {
-      sessao = auth.entrar(usuario.trim().toLowerCase(), senha);
+      sessao = auth.entrar(email, senha);
     } catch (erro) {
       throw new ErroHttp(401, erro.message);
     }
@@ -58,22 +59,33 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
     next();
   };
 
+  /** Regra de acesso: administrador vê tudo; os demais precisam do setor E do número do atendimento. */
+  const podeVer = (atendente, a) =>
+    atendente.admin || (atendente.setores.includes(a.setor_id) && atendente.canais.includes(a.canal_id));
+
   /** Carrega o atendimento da rota, conferindo se o atendente pode vê-lo. */
   function atendimentoDaRota(req) {
     const a = banco.buscarAtendimento(Number(req.params.id));
     if (!a) throw new ErroHttp(404, "Atendimento não encontrado.");
-    if (!req.atendente.admin && !req.atendente.setores.includes(a.setor_id)) {
-      throw new ErroHttp(403, "Este atendimento é de outro setor.");
-    }
+    if (!podeVer(req.atendente, a)) throw new ErroHttp(403, "Você não tem acesso a este atendimento.");
     return a;
+  }
+
+  /** Estado de conexão de cada número que o atendente pode ver (sem o QR code). */
+  function canaisVisiveis(atendente) {
+    return banco
+      .listarCanais({ inativos: atendente.admin })
+      .filter((c) => atendente.admin || atendente.canais.includes(c.id))
+      .map((c) => ({ id: c.id, nome: c.nome, ativo: c.ativo, status: whatsapp.estado(c.id).status }));
   }
 
   app.get("/api/eu", (req, res) => {
     res.json({
       atendente: publico(req.atendente),
       setores: banco.listarSetores(),
-      colegas: banco.listarAtendentes().filter((t) => t.ativo).map(({ id, nome, setores }) => ({ id, nome, setores })),
-      whatsapp: { modo: whatsapp.modo, status: whatsapp.estado().status },
+      colegas: banco.listarAtendentes().filter((t) => t.ativo).map(({ id, nome, setores, canais }) => ({ id, nome, setores, canais })),
+      canais: canaisVisiveis(req.atendente),
+      modo: whatsapp.modo,
       iaAtiva: !!central.classificar,
     });
   });
@@ -83,7 +95,10 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
     const { escopo = "meus", resolvidos } = req.query;
     const filtro = { resolvidos: resolvidos === "1" };
     if (escopo === "meus") filtro.atendenteId = req.atendente.id;
-    if (!req.atendente.admin) filtro.setores = req.atendente.setores;
+    if (!req.atendente.admin) {
+      filtro.setores = req.atendente.setores;
+      filtro.canais = req.atendente.canais;
+    }
     res.json(banco.listarAtendimentos(filtro));
   });
 
@@ -116,7 +131,9 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
     if (!banco.listarSetores().some((s) => s.id === setorId)) throw new ErroHttp(400, "Setor inválido.");
     if (atendenteId !== null) {
       const destino = banco.buscarAtendente(Number(atendenteId));
-      if (!destino?.ativo || !destino.setores.includes(setorId)) throw new ErroHttp(400, "Este atendente não é do setor escolhido.");
+      if (!destino?.ativo || !destino.setores.includes(setorId) || !destino.canais.includes(a.canal_id)) {
+        throw new ErroHttp(400, "Este atendente não atende o setor escolhido neste número de WhatsApp.");
+      }
     }
     central.transferir(a.id, setorId, atendenteId === null ? null : Number(atendenteId));
     res.json({ ok: true });
@@ -146,22 +163,66 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
   });
 
   // ---------- administração ----------
-  app.get("/api/whatsapp", exigirAdmin, (req, res) => res.json(whatsapp.estado()));
+  // Números de WhatsApp (canais)
+  const canalDaRota = (req) => {
+    const canal = banco.buscarCanal(Number(req.params.id));
+    if (!canal) throw new ErroHttp(404, "Número não encontrado.");
+    return canal;
+  };
+  const nomeDoCanal = (corpo) => {
+    const nome = typeof corpo?.nome === "string" ? corpo.nome.trim() : "";
+    if (!nome || nome.length > 40) throw new ErroHttp(400, "Dê um nome ao número (até 40 caracteres).");
+    return nome;
+  };
+
+  app.get("/api/canais", exigirAdmin, (req, res) => {
+    res.json(banco.listarCanais({ inativos: true }).map((c) => ({ ...c, ...whatsapp.estado(c.id) })));
+  });
+
+  app.post("/api/canais", exigirAdmin, async (req, res) => {
+    const id = banco.criarCanal(nomeDoCanal(req.body));
+    await whatsapp.iniciarCanal(id);
+    central.emit("mudou", { canalId: id });
+    res.status(201).json({ id });
+  });
+
+  app.put("/api/canais/:id", exigirAdmin, async (req, res) => {
+    const canal = canalDaRota(req);
+    const dados = {};
+    if (req.body?.nome !== undefined) dados.nome = nomeDoCanal(req.body);
+    if (req.body?.ativo !== undefined) dados.ativo = !!req.body.ativo;
+    banco.atualizarCanal(canal.id, dados);
+    if (dados.ativo === true) await whatsapp.iniciarCanal(canal.id);
+    if (dados.ativo === false) await whatsapp.pararCanal(canal.id);
+    central.emit("mudou", { canalId: canal.id });
+    res.json({ ok: true });
+  });
+
+  app.post("/api/canais/:id/desvincular", exigirAdmin, async (req, res) => {
+    const canal = canalDaRota(req);
+    if (!canal.ativo) throw new ErroHttp(400, "Reative o número antes de vincular outro aparelho.");
+    await whatsapp.desvincularCanal(canal.id);
+    central.emit("mudou", { canalId: canal.id });
+    res.json({ ok: true });
+  });
 
   app.get("/api/atendentes", exigirAdmin, (req, res) => res.json(banco.listarAtendentes().map(publico)));
 
   function validarAtendente(corpo, { novo }) {
     const dados = {};
     const setoresValidos = banco.listarSetores().map((s) => s.id);
+    const canaisValidos = banco.listarCanais({ inativos: true }).map((c) => c.id);
     if (novo || corpo.nome !== undefined) {
       if (typeof corpo.nome !== "string" || !corpo.nome.trim()) throw new ErroHttp(400, "Informe o nome.");
       dados.nome = corpo.nome.trim();
     }
-    if (novo) {
-      if (typeof corpo.usuario !== "string" || !/^[a-z0-9._-]{3,30}$/.test(corpo.usuario.trim().toLowerCase())) {
-        throw new ErroHttp(400, "Usuário deve ter de 3 a 30 caracteres: letras, números, ponto, hífen ou sublinhado.");
-      }
-      dados.usuario = corpo.usuario.trim().toLowerCase();
+    if (novo || corpo.email !== undefined) {
+      dados.email = normalizarEmail(corpo.email);
+      if (!dados.email) throw new ErroHttp(400, "Informe um e-mail válido.");
+    }
+    if (corpo.canais !== undefined) {
+      if (!Array.isArray(corpo.canais) || corpo.canais.some((c) => !canaisValidos.includes(c))) throw new ErroHttp(400, "Número de WhatsApp inválido.");
+      dados.canais = corpo.canais;
     }
     if (novo || corpo.senha) {
       if (typeof corpo.senha !== "string" || corpo.senha.length < 8) throw new ErroHttp(400, "A senha deve ter pelo menos 8 caracteres.");
@@ -178,7 +239,7 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
 
   app.post("/api/atendentes", exigirAdmin, (req, res) => {
     const dados = validarAtendente(req.body || {}, { novo: true });
-    if (banco.buscarAtendentePorUsuario(dados.usuario)) throw new ErroHttp(409, "Já existe um atendente com este usuário.");
+    if (banco.buscarAtendentePorEmail(dados.email)) throw new ErroHttp(409, "Já existe um atendente com este e-mail.");
     res.status(201).json({ id: banco.criarAtendente(dados) });
   });
 
@@ -186,6 +247,8 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
     const alvo = banco.buscarAtendente(Number(req.params.id));
     if (!alvo) throw new ErroHttp(404, "Atendente não encontrado.");
     const dados = validarAtendente(req.body || {}, { novo: false });
+    const outro = dados.email && banco.buscarAtendentePorEmail(dados.email);
+    if (outro && outro.id !== alvo.id) throw new ErroHttp(409, "Já existe um atendente com este e-mail.");
     const deixaDeSerAdmin = alvo.admin && alvo.ativo && (dados.admin === false || dados.ativo === false);
     if (deixaDeSerAdmin && banco.contarAdminsAtivos() <= 1) throw new ErroHttp(400, "É preciso manter pelo menos um administrador ativo.");
     banco.atualizarAtendente(alvo.id, dados);
@@ -195,11 +258,12 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
   // ---------- simulador (só existe no modo de testes) ----------
   if (whatsapp.modo === "simulador") {
     app.post("/api/simulador/mensagem", exigirAdmin, (req, res) => {
-      const { chatNome, chatTipo, autorNome, texto } = req.body || {};
+      const { canalId, chatNome, chatTipo, autorNome, texto } = req.body || {};
+      if (!banco.buscarCanal(Number(canalId))?.ativo) throw new ErroHttp(400, "Escolha um número ativo.");
       if (![chatNome, autorNome, texto].every((v) => typeof v === "string" && v.trim())) {
         throw new ErroHttp(400, "Preencha grupo, autor e mensagem.");
       }
-      whatsapp.simularRecebimento({ chatNome: chatNome.trim(), chatTipo: chatTipo === "privado" ? "privado" : "grupo", autorNome: autorNome.trim(), texto: texto.trim() });
+      whatsapp.simularRecebimento(Number(canalId), { chatNome: chatNome.trim(), chatTipo: chatTipo === "privado" ? "privado" : "grupo", autorNome: autorNome.trim(), texto: texto.trim() });
       res.json({ ok: true });
     });
   }

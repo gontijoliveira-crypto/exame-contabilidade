@@ -32,6 +32,47 @@ Cliente ◄── resposta assinada "Ana (Fiscal):" ◄── Painel web do aten
 Os setores e suas descrições (é por elas que a IA decide) ficam em [`config/setores.json`](config/setores.json).
 Para ajustar o encaminhamento, edite as descrições e reinicie.
 
+## Acesso dos atendentes (login por e-mail)
+
+1. No primeiro início, a central cria o administrador com o e-mail de `ADMIN_EMAIL` e a senha de
+   `ADMIN_SENHA` (se ela ficar vazia, uma senha é gerada e mostrada uma única vez no terminal).
+2. O administrador entra no painel com esse e-mail, abre **Atendentes** › **Novo atendente** e informa
+   nome, e-mail, senha inicial, os **setores** que a pessoa atende e os **números de WhatsApp** a que
+   ela tem acesso.
+3. O atendente entra no painel com o próprio e-mail e senha.
+4. Ele só vê um atendimento quando tem acesso **ao número** por onde a mensagem chegou **e ao setor**
+   para onde a IA a encaminhou. O administrador vê tudo.
+5. Sessão de 12 horas; 5 senhas erradas bloqueiam o e-mail por 15 minutos. Desativar um atendente
+   encerra as sessões dele na hora. Troca de senha é feita pelo administrador.
+
+## Vários números de WhatsApp
+
+Cada número (por exemplo "WhatsApp 1" para uma carteira de clientes e "WhatsApp 2" para outra) tem a
+própria conexão e o próprio QR code, e as conversas de cada um ficam separadas: um mesmo grupo com os
+dois números gera atendimentos independentes, e a resposta sempre sai pelo número por onde a mensagem
+chegou. Atendimentos novos só são distribuídos a atendentes que têm acesso àquele número.
+
+Na aba **WhatsApp** do painel, o administrador:
+
+- **Adicionar número**: cria o número e mostra o QR code para vincular.
+- **Renomear**: muda o nome mostrado no painel.
+- **Trocar de aparelho / Gerar novo QR code**: desvincula o celular atual e mostra um QR novo.
+- **Desativar / Reativar**: o número para de receber e enviar, mas o histórico continua disponível.
+
+### Passo a passo para vincular um número
+
+1. Deixe o WhatsApp (de preferência o WhatsApp Business) funcionando no celular desse número.
+2. No painel, aba **WhatsApp**, clique em **Adicionar número** e dê um nome (na primeira instalação já
+   existe o "WhatsApp 1").
+3. No celular: WhatsApp › **Configurações** › **Aparelhos conectados** › **Conectar um aparelho**, e
+   aponte a câmera para o QR code do painel. Em alguns segundos o número aparece como **Conectado**.
+4. Em **Atendentes**, marque quem tem acesso a esse número.
+5. Adicione o número aos grupos dos clientes daquela carteira.
+
+O celular precisa continuar com o WhatsApp ativo e com internet de tempos em tempos; se ficar muito
+tempo desligado, o WhatsApp desfaz o vínculo e é preciso ler o QR de novo. Só entram as mensagens que
+chegarem depois do vínculo.
+
 ## Rodando
 
 Requer Node.js 22.13 ou mais novo.
@@ -39,18 +80,20 @@ Requer Node.js 22.13 ou mais novo.
 ```bash
 cd central-whatsapp
 npm install
-cp .env.example .env     # preencha ANTHROPIC_API_KEY e ADMIN_SENHA
+cp .env.example .env     # preencha ANTHROPIC_API_KEY, ADMIN_EMAIL e ADMIN_SENHA
 npm start
 ```
 
-Abra `http://localhost:3000` e entre com o administrador. Em **Atendentes**, cadastre a equipe e marque
-os setores de cada um.
+Abra `http://localhost:3000` e entre com o e-mail e a senha do administrador.
 
 - **Modo simulador** (`WHATSAPP_MODO=simulador`, o padrão): nada é enviado ao WhatsApp. Na aba
-  **WhatsApp** do painel há um formulário para simular mensagens de clientes. Use para conhecer e testar.
-- **Modo real** (`WHATSAPP_MODO=baileys`): na aba **WhatsApp** aparece um QR code. Leia-o com o celular
-  do escritório (Aparelhos conectados › Conectar um aparelho), como no WhatsApp Web. Depois é só
-  adicionar o número aos grupos dos clientes.
+  **WhatsApp** do painel há um formulário para simular mensagens de clientes chegando por qualquer
+  número. Use para conhecer e testar.
+- **Modo real** (`WHATSAPP_MODO=baileys`): cada número mostra um QR code para vincular (veja acima).
+
+Atualizando de uma versão anterior: o banco antigo (sem e-mail e sem vários números) é guardado ao lado
+com outro nome e um banco novo é criado; cadastre os atendentes de novo. O vínculo do WhatsApp também
+precisa ser refeito.
 
 `npm test` roda os testes automatizados (usam o simulador e uma IA de mentira; não gastam créditos).
 
@@ -60,7 +103,7 @@ os setores de cada um.
   usa a biblioteca Baileys (o protocolo do WhatsApp Web). Isso não é a API oficial da Meta e contraria
   os termos do WhatsApp: existe risco de o número ser banido. A API oficial (Cloud API) não permite
   entrar em grupos já existentes. Comece com um número que possa ser substituído e evite disparos em
-  massa. O adaptador fica isolado em `src/whatsapp/`, então dá para trocar de provedor sem mexer no resto.
+  massa. Cada número adicional é mais um número exposto a esse risco. O adaptador fica isolado em `src/whatsapp/`, então dá para trocar de provedor sem mexer no resto.
 - **Dados de clientes (LGPD).** As conversas ficam em `dados/central.db` e o texto das mensagens é
   enviado à API da Anthropic para a triagem. Avalie informar os clientes, restringir o acesso ao
   servidor e fazer backup dessa pasta. `dados/` e `.env` nunca devem ir para o repositório.
@@ -73,6 +116,7 @@ os setores de cada um.
 
 - Mídia: áudios, imagens e documentos aparecem como marcadores (`[áudio]`, `[documento: nota.pdf]`);
   o arquivo em si não é baixado nem transcrito, e o painel só envia texto.
+- "Esqueci minha senha" por e-mail (hoje quem redefine é o administrador).
 - Avisar o atendente fora do painel (por exemplo, no WhatsApp pessoal) quando chega algo novo.
 - Horário de atendimento, mensagens automáticas, relatórios e tempo médio de resposta.
 - Edição de setores pelo painel (hoje é pelo arquivo de configuração).
@@ -84,8 +128,8 @@ os setores de cada um.
 | `src/index.js` | Inicialização: banco, WhatsApp, IA e servidor |
 | `src/central.js` | Regras: triagem, abertura e continuação de atendimentos, respostas, transferências |
 | `src/classificador.js` | Chamada ao Claude e instruções da triagem |
-| `src/whatsapp/` | Adaptadores: `baileys.js` (real) e `simulador.js` (testes) |
-| `src/servidor.js`, `src/auth.js` | API do painel, login e permissões por setor |
+| `src/whatsapp/` | `canais.js` (uma conexão por número), `baileys.js` (real) e `simulador.js` (testes) |
+| `src/servidor.js`, `src/auth.js` | API do painel, login por e-mail e permissões por setor e número |
 | `src/db.js` | Banco SQLite (arquivo único em `dados/`) |
 | `public/` | Painel web dos atendentes |
 | `config/setores.json` | Setores do escritório e o setor padrão |

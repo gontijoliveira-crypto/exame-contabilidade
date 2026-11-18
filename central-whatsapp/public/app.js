@@ -11,7 +11,7 @@ const estado = {
   aberto: null, // { atendimento, mensagens }
   rascunhos: new Map(), // atendimentoId -> texto digitado
   atendentes: [],
-  whatsapp: null,
+  canais: [], // números de WhatsApp, com estado e QR code (só administrador)
 };
 
 // ---------- utilitários ----------
@@ -64,10 +64,11 @@ function quando(iso) {
 }
 
 const ROTULO_STATUS = { aberto: "Aguardando", em_atendimento: "Em atendimento", resolvido: "Resolvido" };
-const ROTULO_WHATSAPP = { conectado: "WhatsApp conectado", aguardando_qr: "WhatsApp: ler QR code", desconectado: "WhatsApp desconectado" };
+const ROTULO_CONEXAO = { conectado: "Conectado", aguardando_qr: "Aguardando leitura do QR code", desconectado: "Desconectado", desativado: "Desativado" };
 
 function chipsDoAtendimento(a) {
   return [
+    estado.eu.canais.length > 1 && el("span", { class: "chip canal" }, a.canal_nome),
     el("span", { class: "chip setor" }, a.setor_nome),
     a.urgencia === "alta" && el("span", { class: "chip alta" }, "Urgente"),
     el("span", { class: "chip neutro" }, a.atendente_nome || "Sem responsável"),
@@ -94,7 +95,7 @@ async function atualizar() {
   if (!estado.eu) return;
   await Promise.all([carregarLista(), carregarAberto()]);
   if (estado.aba === "atendentes") estado.atendentes = await api("/atendentes");
-  if (estado.aba === "whatsapp") estado.whatsapp = await api("/whatsapp");
+  if (estado.aba === "whatsapp") estado.canais = await api("/canais");
   desenhar();
 }
 
@@ -109,9 +110,9 @@ async function iniciar() {
   const eventos = new EventSource("/api/eventos");
   eventos.onmessage = async (e) => {
     const evento = JSON.parse(e.data);
-    if (evento.whatsapp) estado.eu.whatsapp.status = evento.whatsapp;
+    if (evento.canalId) estado.eu = await api("/eu"); // mudou a conexão ou o cadastro de um número
     // Não refaz a tela enquanto alguém preenche um formulário da administração.
-    const preenchendo = estado.aba === "atendentes" || (estado.aba === "whatsapp" && estado.eu.whatsapp.modo === "simulador");
+    const preenchendo = estado.aba === "atendentes" || (estado.aba === "whatsapp" && estado.eu.modo === "simulador");
     if (!preenchendo) await atualizar();
   };
 }
@@ -129,7 +130,7 @@ async function acao(caminho, corpo = {}) {
 // ---------- telas ----------
 function telaLogin() {
   const erro = el("div", { class: "erro", role: "alert" });
-  const usuario = el("input", { id: "usuario", autocomplete: "username", required: true });
+  const email = el("input", { id: "email", type: "email", autocomplete: "username", required: true });
   const senha = el("input", { id: "senha", type: "password", autocomplete: "current-password", required: true });
   const botao = el("button", { class: "primario", type: "submit" }, "Entrar");
   return el("div", { class: "login" },
@@ -139,7 +140,7 @@ function telaLogin() {
         e.preventDefault();
         botao.disabled = true;
         try {
-          await api("/login", { usuario: usuario.value, senha: senha.value });
+          await api("/login", { email: email.value, senha: senha.value });
           await iniciar();
         } catch (falha) {
           erro.textContent = falha.message;
@@ -148,7 +149,7 @@ function telaLogin() {
       },
     },
       el("h1", {}, "Central de Atendimento"),
-      el("div", { class: "campo" }, el("label", { for: "usuario" }, "Usuário"), usuario),
+      el("div", { class: "campo" }, el("label", { for: "email" }, "E-mail"), email),
       el("div", { class: "campo" }, el("label", { for: "senha" }, "Senha"), senha),
       erro,
       botao,
@@ -157,7 +158,14 @@ function telaLogin() {
 }
 
 function topo() {
-  const { atendente, whatsapp } = estado.eu;
+  const { atendente, modo } = estado.eu;
+  const ativos = estado.eu.canais.filter((c) => c.ativo);
+  const conectados = ativos.filter((c) => c.status === "conectado").length;
+  const conexao =
+    modo === "simulador" ? "Modo simulador"
+    : ativos.length === 0 ? "Nenhum número de WhatsApp"
+    : ativos.length === 1 ? (conectados ? "WhatsApp conectado" : "WhatsApp desconectado")
+    : `${conectados} de ${ativos.length} números conectados`;
   const abas = [["atendimentos", "Atendimentos"]];
   if (atendente.admin) abas.push(["atendentes", "Atendentes"], ["whatsapp", "WhatsApp"]);
   return el("header", { class: "topo" },
@@ -168,8 +176,7 @@ function topo() {
         "aria-current": estado.aba === id ? "page" : null,
         onclick: () => { estado.aba = id; atualizar(); },
       }, nome))),
-    el("span", { class: `chip ${whatsapp.status === "conectado" ? "ok" : "aviso"}` },
-      whatsapp.modo === "simulador" ? "Modo simulador" : ROTULO_WHATSAPP[whatsapp.status]),
+    el("span", { class: `chip ${ativos.length && conectados === ativos.length ? "ok" : "aviso"}` }, conexao),
     el("span", { class: "quem" }, atendente.nome),
     el("button", { class: "sair", onclick: async () => { await api("/logout", {}); location.reload(); } }, "Sair"),
   );
@@ -218,7 +225,7 @@ function conversa() {
     el("option", { value: "" }, "Transferir para…"),
     setores.map((s) => el("optgroup", { label: s.nome },
       el("option", { value: `${s.id}|` }, `${s.nome} (distribuir)`),
-      colegas.filter((c) => c.setores.includes(s.id)).map((c) => el("option", { value: `${s.id}|${c.id}` }, c.nome)),
+      colegas.filter((c) => c.setores.includes(s.id) && c.canais.includes(a.canal_id)).map((c) => el("option", { value: `${s.id}|${c.id}` }, c.nome)),
     )),
   );
   seletor.addEventListener("change", () => {
@@ -279,13 +286,15 @@ function conversa() {
 }
 
 function telaAtendentes() {
-  const { setores } = estado.eu;
+  const { setores, canais } = estado.eu;
+  const nomeCanal = (id) => canais.find((c) => c.id === id)?.nome || id;
   const nomeSetor = (id) => setores.find((s) => s.id === id)?.nome || id;
 
   function formulario(existente) {
     const erro = el("div", { class: "erro", role: "alert" });
     const nome = el("input", { id: "f-nome", value: existente?.nome || "", required: true });
-    const usuario = el("input", { id: "f-usuario", value: existente?.usuario || "", disabled: !!existente, required: true, autocomplete: "off" });
+    const email = el("input", { id: "f-email", type: "email", value: existente?.email || "", required: true, autocomplete: "off" });
+    const caixasCanais = canais.map((c) => el("input", { type: "checkbox", value: c.id, checked: !!existente?.canais.includes(c.id) }));
     const senha = el("input", { id: "f-senha", type: "password", autocomplete: "new-password", required: !existente, minLength: 8 });
     const caixas = setores.map((s) => el("input", { type: "checkbox", value: s.id, checked: !!existente?.setores.includes(s.id) }));
     const admin = el("input", { type: "checkbox", checked: !!existente?.admin });
@@ -297,6 +306,8 @@ function telaAtendentes() {
         e.preventDefault();
         const corpo = {
           nome: nome.value,
+          email: email.value,
+          canais: caixasCanais.filter((c) => c.checked).map((c) => Number(c.value)),
           setores: caixas.filter((c) => c.checked).map((c) => c.value),
           admin: admin.checked,
           ativo: ativo.checked,
@@ -304,7 +315,7 @@ function telaAtendentes() {
         if (senha.value) corpo.senha = senha.value;
         try {
           if (existente) await api(`/atendentes/${existente.id}`, corpo, "PUT");
-          else await api("/atendentes", { ...corpo, usuario: usuario.value });
+          else await api("/atendentes", corpo);
           estado.editando = undefined;
           estado.eu = await api("/eu");
           await atualizar();
@@ -316,13 +327,16 @@ function telaAtendentes() {
       el("h3", {}, existente ? `Editar ${existente.nome}` : "Novo atendente"),
       el("div", { class: "grade" },
         el("div", { class: "campo" }, el("label", { for: "f-nome" }, "Nome (aparece na assinatura das respostas)"), nome),
-        el("div", { class: "campo" }, el("label", { for: "f-usuario" }, "Usuário de acesso"), usuario),
+        el("div", { class: "campo" }, el("label", { for: "f-email" }, "E-mail (usado para entrar no painel)"), email),
         el("div", { class: "campo" }, el("label", { for: "f-senha" }, existente ? "Nova senha (deixe em branco para manter)" : "Senha (mínimo de 8 caracteres)"), senha),
       ),
       el("div", { class: "campo" }, el("label", {}, "Setores que atende"),
         el("div", { class: "marcar" }, setores.map((s, i) => el("label", {}, caixas[i], s.nome)))),
+      el("div", { class: "campo" }, el("label", {}, "Números de WhatsApp a que tem acesso"),
+        el("div", { class: "marcar" }, canais.map((c, i) => el("label", {}, caixasCanais[i], c.ativo ? c.nome : `${c.nome} (desativado)`)))),
+      el("p", { class: "dica" }, "O atendente só vê um atendimento quando tem acesso ao número por onde ele chegou e ao setor para onde foi encaminhado."),
       el("div", { class: "campo marcar" },
-        el("label", {}, admin, "Administrador (vê todos os setores e gerencia atendentes)"),
+        el("label", {}, admin, "Administrador (vê todos os setores e números e gerencia a central)"),
         el("label", {}, ativo, "Ativo")),
       erro,
       el("div", { class: "acoes" },
@@ -335,11 +349,12 @@ function telaAtendentes() {
     el("div", { class: "cartao" },
       el("h2", {}, "Atendentes"),
       el("div", { class: "tabela" }, el("table", {},
-        el("thead", {}, el("tr", {}, ["Nome", "Usuário", "Setores", "Situação", ""].map((t) => el("th", {}, t)))),
+        el("thead", {}, el("tr", {}, ["Nome", "E-mail", "Setores", "Números", "Situação", ""].map((t) => el("th", {}, t)))),
         el("tbody", {}, estado.atendentes.map((t) => el("tr", {},
           el("td", {}, t.nome, t.admin && el("span", { class: "chip setor", style: "margin-left:6px" }, "Admin")),
-          el("td", {}, t.usuario),
-          el("td", {}, t.setores.map(nomeSetor).join(", ") || "—"),
+          el("td", {}, t.email),
+          el("td", {}, t.admin ? "Todos" : t.setores.map(nomeSetor).join(", ") || "—"),
+          el("td", {}, t.admin ? "Todos" : t.canais.map(nomeCanal).join(", ") || "—"),
           el("td", {}, el("span", { class: `chip ${t.ativo ? "ok" : "neutro"}` }, t.ativo ? "Ativo" : "Inativo")),
           el("td", {}, el("button", { onclick: () => { estado.editando = t; desenhar(); } }, "Editar")),
         ))),
@@ -353,48 +368,85 @@ function telaAtendentes() {
 }
 
 function telaWhatsapp() {
-  const w = estado.whatsapp || {};
-  const blocos = [el("h2", {}, "Conexão com o WhatsApp")];
+  const simulador = estado.eu.modo === "simulador";
 
-  if (w.modo === "simulador") {
+  /** Executa uma ação de administração dos números e atualiza a tela. */
+  async function administrar(caminho, corpo, metodo) {
+    try {
+      await api(caminho, corpo, metodo);
+      estado.eu = await api("/eu");
+      await atualizar();
+    } catch (erro) {
+      alert(erro.message);
+    }
+  }
+  const pedirNome = (atual) => (prompt("Nome deste número (ex.: WhatsApp 1, Clientes Simples Nacional):", atual || "") || "").trim();
+
+  function cartaoDoCanal(c) {
+    const conectado = c.status === "conectado";
+    return el("div", { class: "cartao" },
+      el("div", { class: "linha-canal" },
+        el("h3", {}, c.nome),
+        el("span", { class: `chip ${conectado ? "ok" : c.ativo ? "aviso" : "neutro"}` }, simulador && c.ativo ? "Simulado" : ROTULO_CONEXAO[c.status]),
+        c.numero && el("span", { class: "numero" }, `+${c.numero}`)),
+      !simulador && c.status === "aguardando_qr" && c.qr && el("div", {},
+        el("p", {}, "No celular deste número, abra o WhatsApp, toque em Configurações › Aparelhos conectados › Conectar um aparelho e leia o código:"),
+        el("img", { class: "qr", src: c.qr, alt: `QR code para conectar ${c.nome}`, width: 280, height: 280 }),
+        el("p", { class: "dica" }, "O código muda a cada poucos segundos; esta página se atualiza sozinha.")),
+      !simulador && c.ativo && c.status === "desconectado" && el("p", {}, "Tentando conectar. Se continuar assim, verifique a internet do servidor."),
+      !c.ativo && el("p", { class: "dica" }, "Número desativado: não recebe nem envia mensagens. O histórico de atendimentos continua disponível."),
+      el("div", { class: "acoes" },
+        el("button", { onclick: () => { const nome = pedirNome(c.nome); if (nome) administrar(`/canais/${c.id}`, { nome }, "PUT"); } }, "Renomear"),
+        !simulador && c.ativo && el("button", {
+          onclick: () => confirm(`Desvincular o aparelho de "${c.nome}"? Será preciso ler um novo QR code.`) && administrar(`/canais/${c.id}/desvincular`, {}),
+        }, conectado ? "Trocar de aparelho" : "Gerar novo QR code"),
+        c.ativo
+          ? el("button", { onclick: () => confirm(`Desativar "${c.nome}"? Ele deixa de receber e enviar mensagens.`) && administrar(`/canais/${c.id}`, { ativo: false }, "PUT") }, "Desativar")
+          : el("button", { onclick: () => administrar(`/canais/${c.id}`, { ativo: true }, "PUT") }, "Reativar"),
+      ),
+    );
+  }
+
+  function formularioSimulador() {
+    const ativos = estado.canais.filter((c) => c.ativo);
     const erro = el("div", { class: "erro", role: "alert" });
+    const canal = el("select", { id: "s-canal" }, ativos.map((c) => el("option", { value: c.id }, c.nome)));
     const grupo = el("input", { id: "s-grupo", value: "Padaria Pão Quente x Exame", required: true });
     const autor = el("input", { id: "s-autor", value: "Marcos (Padaria)", required: true });
     const texto = el("textarea", { id: "s-texto", rows: 3, required: true });
-    blocos.push(
-      el("p", {}, "A central está em modo simulador: nada é enviado ou recebido pelo WhatsApp de verdade. Use o formulário para simular a mensagem de um cliente e ver a triagem funcionando."),
-      el("form", {
-        onsubmit: async (e) => {
-          e.preventDefault();
-          try {
-            await api("/simulador/mensagem", { chatNome: grupo.value, autorNome: autor.value, texto: texto.value });
-            texto.value = "";
-            erro.textContent = "Mensagem simulada. Ela aparece em Atendimentos após a triagem.";
-          } catch (falha) {
-            erro.textContent = falha.message;
-          }
-        },
+    return el("form", {
+      class: "cartao",
+      onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          await api("/simulador/mensagem", { canalId: Number(canal.value), chatNome: grupo.value, autorNome: autor.value, texto: texto.value });
+          texto.value = "";
+          erro.textContent = "Mensagem simulada. Ela aparece em Atendimentos após a triagem.";
+        } catch (falha) {
+          erro.textContent = falha.message;
+        }
       },
-        el("div", { class: "grade" },
-          el("div", { class: "campo" }, el("label", { for: "s-grupo" }, "Grupo"), grupo),
-          el("div", { class: "campo" }, el("label", { for: "s-autor" }, "Quem escreve"), autor)),
-        el("div", { class: "campo" }, el("label", { for: "s-texto" }, "Mensagem"), texto),
-        erro,
-        el("button", { class: "primario", type: "submit" }, "Simular recebimento"),
-      ),
+    },
+      el("h3", {}, "Simular mensagem de cliente"),
+      el("p", { class: "dica" }, "A central está em modo simulador: nada é enviado ou recebido pelo WhatsApp de verdade."),
+      el("div", { class: "grade" },
+        el("div", { class: "campo" }, el("label", { for: "s-canal" }, "Chega pelo número"), canal),
+        el("div", { class: "campo" }, el("label", { for: "s-grupo" }, "Grupo"), grupo),
+        el("div", { class: "campo" }, el("label", { for: "s-autor" }, "Quem escreve"), autor)),
+      el("div", { class: "campo" }, el("label", { for: "s-texto" }, "Mensagem"), texto),
+      erro,
+      el("button", { class: "primario", type: "submit" }, "Simular recebimento"),
     );
-  } else if (w.status === "conectado") {
-    blocos.push(el("p", {}, el("span", { class: "chip ok" }, "Conectado"), " O número do escritório está recebendo mensagens."));
-  } else if (w.status === "aguardando_qr" && w.qr) {
-    blocos.push(
-      el("p", {}, "No celular do escritório, abra o WhatsApp, toque em Aparelhos conectados › Conectar um aparelho e leia o código:"),
-      el("img", { class: "qr", src: w.qr, alt: "QR code para conectar o WhatsApp", width: 320, height: 320 }),
-      el("p", {}, "O código muda a cada poucos segundos; esta página se atualiza sozinha."),
-    );
-  } else {
-    blocos.push(el("p", {}, el("span", { class: "chip aviso" }, "Desconectado"), " Tentando reconectar. Se continuar assim, verifique a internet do servidor."));
   }
-  return el("main", { class: "pagina" }, el("div", { class: "cartao" }, blocos));
+
+  return el("main", { class: "pagina" },
+    el("div", { class: "cartao" },
+      el("h2", {}, "Números de WhatsApp"),
+      el("p", {}, "Cada número tem a sua própria conexão. Em Atendentes, você escolhe quem tem acesso a cada um."),
+      el("button", { class: "primario", onclick: () => { const nome = pedirNome(); if (nome) administrar("/canais", { nome }); } }, "Adicionar número")),
+    estado.canais.map(cartaoDoCanal),
+    simulador && formularioSimulador(),
+  );
 }
 
 function desenhar() {
@@ -423,7 +475,7 @@ function desenhar() {
 
 // O QR code expira rápido: enquanto a aba WhatsApp estiver aberta, busca o estado periodicamente.
 setInterval(() => {
-  if (estado.eu && estado.aba === "whatsapp" && estado.whatsapp?.modo !== "simulador") atualizar();
+  if (estado.eu && estado.aba === "whatsapp" && estado.eu.modo !== "simulador") atualizar();
 }, 5000);
 
 iniciar();

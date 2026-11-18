@@ -16,25 +16,32 @@ export function conferirSenha(senha, hash) {
   return timingSafeEqual(calculado, Buffer.from(esperado, "hex"));
 }
 
+/** Normaliza o e-mail (minúsculas, sem espaços); devolve null se não parecer um e-mail. */
+export function normalizarEmail(valor) {
+  if (typeof valor !== "string") return null;
+  const email = valor.trim().toLowerCase();
+  return email.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
 export const gerarSenha = () => randomBytes(9).toString("base64url");
 
 export function criarAuth(banco) {
-  const falhas = new Map(); // usuario -> { n, ate }
+  const falhas = new Map(); // e-mail -> { n, ate }
 
   return {
     /** Devolve { token, expiraEm } ou lança erro com mensagem para o usuário. */
-    entrar(usuario, senha) {
-      const f = falhas.get(usuario);
+    entrar(email, senha) {
+      const f = falhas.get(email);
       if (f && f.n >= MAX_FALHAS && f.ate > Date.now()) {
         throw new Error("Muitas tentativas. Aguarde alguns minutos e tente de novo.");
       }
-      const atendente = banco.buscarAtendentePorUsuario(usuario);
+      const atendente = banco.buscarAtendentePorEmail(email);
       if (!atendente || !atendente.ativo || !conferirSenha(senha, atendente.senha_hash)) {
         const n = f && f.ate > Date.now() ? f.n + 1 : 1;
-        falhas.set(usuario, { n, ate: Date.now() + BLOQUEIO_MS });
-        throw new Error("Usuário ou senha incorretos.");
+        falhas.set(email, { n, ate: Date.now() + BLOQUEIO_MS });
+        throw new Error("E-mail ou senha incorretos.");
       }
-      falhas.delete(usuario);
+      falhas.delete(email);
       const token = randomBytes(32).toString("base64url");
       const expiraEm = new Date(Date.now() + DURACAO_SESSAO_MS);
       banco.criarSessao(token, atendente.id, expiraEm.toISOString());

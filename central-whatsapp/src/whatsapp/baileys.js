@@ -37,7 +37,9 @@ export function criarBaileys({ pastaSessao, log = console }) {
   let sock = null;
   let aoReceber = () => {};
   let aoMudar = () => {};
-  let estado = { modo: "baileys", status: "desconectado", qr: null };
+  let estado = { modo: "baileys", status: "desconectado", qr: null, numero: null };
+  let parado = false;
+  let reconexao = null;
   const nomesDosGrupos = new Map();
   const enviadasPeloPainel = new Set();
 
@@ -82,9 +84,10 @@ export function criarBaileys({ pastaSessao, log = console }) {
   }
 
   async function conectar() {
+    if (parado) return;
     const { state, saveCreds } = await useMultiFileAuthState(pastaSessao);
     const { version } = await fetchLatestBaileysVersion().catch(() => ({}));
-    sock = makeWASocket({
+    const atual = makeWASocket({
       auth: state,
       version,
       browser: Browsers.appropriate("Central de Atendimento"),
@@ -92,35 +95,38 @@ export function criarBaileys({ pastaSessao, log = console }) {
       markOnlineOnConnect: false,
       syncFullHistory: false,
     });
+    sock = atual;
 
-    sock.ev.on("creds.update", saveCreds);
+    atual.ev.on("creds.update", saveCreds);
 
-    sock.ev.on("groups.update", (grupos) => {
+    atual.ev.on("groups.update", (grupos) => {
       for (const g of grupos) if (g.id && g.subject) nomesDosGrupos.set(g.id, g.subject);
     });
 
-    sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
+    atual.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
       if (qr) {
         definirEstado({ status: "aguardando_qr", qr: await QRCode.toDataURL(qr, { width: 320 }) });
         log.info("\nLeia o QR code abaixo com o WhatsApp do escritório (Aparelhos conectados > Conectar um aparelho):\n");
         log.info(await QRCode.toString(qr, { type: "terminal", small: true }));
       }
       if (connection === "open") {
-        definirEstado({ status: "conectado", qr: null });
+        definirEstado({ status: "conectado", qr: null, numero: (sock.user?.id || "").split(/[:@]/)[0] || null });
         log.info("WhatsApp conectado.");
       }
       if (connection === "close") {
         const codigo = lastDisconnect?.error?.output?.statusCode;
         definirEstado({ status: "desconectado", qr: null });
+        // Fechamento de uma conexão antiga (já substituída ao desvincular): não reconecta.
+        if (parado || sock !== atual) return;
         if (codigo === DisconnectReason.loggedOut) {
           log.warn("Sessão do WhatsApp encerrada pelo celular. Será preciso ler o QR code novamente.");
           fs.rmSync(pastaSessao, { recursive: true, force: true });
         }
-        setTimeout(() => conectar().catch((e) => log.error("Falha ao reconectar ao WhatsApp:", e.message)), 3000);
+        reconexao = setTimeout(() => conectar().catch((e) => log.error("Falha ao reconectar ao WhatsApp:", e.message)), 3000);
       }
     });
 
-    sock.ev.on("messages.upsert", async ({ messages, type }) => {
+    atual.ev.on("messages.upsert", async ({ messages, type }) => {
       if (type !== "notify") return; // ignora histórico antigo sincronizado na conexão
       for (const m of messages) {
         try {
@@ -138,6 +144,22 @@ export function criarBaileys({ pastaSessao, log = console }) {
     aoMudarEstado: (fn) => (aoMudar = fn),
     iniciar: conectar,
     estado: () => estado,
+    /** Encerra a conexão sem desvincular o aparelho (a sessão continua válida). */
+    async parar() {
+      parado = true;
+      clearTimeout(reconexao);
+      try { sock?.end(undefined); } catch { /* já estava fechada */ }
+      definirEstado({ status: "desconectado", qr: null });
+    },
+    /** Desvincula o número (some de "Aparelhos conectados") e apaga a sessão; será preciso novo QR code. */
+    async desvincular() {
+      parado = true;
+      clearTimeout(reconexao);
+      try { await sock?.logout(); } catch { /* sem conexão: basta apagar a sessão */ }
+      fs.rmSync(pastaSessao, { recursive: true, force: true });
+      definirEstado({ status: "desconectado", qr: null, numero: null });
+      parado = false;
+    },
     async enviarTexto(jid, texto) {
       if (estado.status !== "conectado") throw new Error("WhatsApp desconectado. Verifique a conexão no painel.");
       const enviada = await sock.sendMessage(jid, { text: texto });

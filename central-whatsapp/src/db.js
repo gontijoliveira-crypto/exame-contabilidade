@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS setores (
 CREATE TABLE IF NOT EXISTS atendentes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nome TEXT NOT NULL,
-  usuario TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
   senha_hash TEXT NOT NULL,
   admin INTEGER NOT NULL DEFAULT 0,
   ativo INTEGER NOT NULL DEFAULT 1
@@ -22,19 +22,32 @@ CREATE TABLE IF NOT EXISTS atendente_setor (
   setor_id TEXT NOT NULL REFERENCES setores(id),
   PRIMARY KEY (atendente_id, setor_id)
 );
+CREATE TABLE IF NOT EXISTS canais (       -- cada número de WhatsApp conectado à central
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  ativo INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS atendente_canal (
+  atendente_id INTEGER NOT NULL REFERENCES atendentes(id),
+  canal_id INTEGER NOT NULL REFERENCES canais(id),
+  PRIMARY KEY (atendente_id, canal_id)
+);
 CREATE TABLE IF NOT EXISTS sessoes (
   token TEXT PRIMARY KEY,
   atendente_id INTEGER NOT NULL REFERENCES atendentes(id),
   expira_em TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS chats (
-  jid TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  canal_id INTEGER NOT NULL REFERENCES canais(id),
+  jid TEXT NOT NULL,
   tipo TEXT NOT NULL,            -- grupo | privado
-  nome TEXT NOT NULL DEFAULT ''
+  nome TEXT NOT NULL DEFAULT '',
+  UNIQUE (canal_id, jid)
 );
 CREATE TABLE IF NOT EXISTS atendimentos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  chat_jid TEXT NOT NULL REFERENCES chats(jid),
+  chat_id INTEGER NOT NULL REFERENCES chats(id),
   setor_id TEXT NOT NULL REFERENCES setores(id),
   atendente_id INTEGER REFERENCES atendentes(id),
   status TEXT NOT NULL DEFAULT 'aberto',   -- aberto | em_atendimento | resolvido
@@ -45,12 +58,12 @@ CREATE TABLE IF NOT EXISTS atendimentos (
   criado_em TEXT NOT NULL,
   atualizado_em TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_atendimentos_chat ON atendimentos(chat_jid, status);
+CREATE INDEX IF NOT EXISTS idx_atendimentos_chat ON atendimentos(chat_id, status);
 CREATE INDEX IF NOT EXISTS idx_atendimentos_setor ON atendimentos(setor_id, status);
 CREATE TABLE IF NOT EXISTS mensagens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  wa_id TEXT UNIQUE,
-  chat_jid TEXT NOT NULL REFERENCES chats(jid),
+  wa_id TEXT,
+  chat_id INTEGER NOT NULL REFERENCES chats(id),
   atendimento_id INTEGER REFERENCES atendimentos(id),
   direcao TEXT NOT NULL,          -- entrada | saida
   autor_jid TEXT NOT NULL DEFAULT '',
@@ -58,27 +71,43 @@ CREATE TABLE IF NOT EXISTS mensagens (
   atendente_id INTEGER REFERENCES atendentes(id),
   tipo TEXT NOT NULL DEFAULT 'texto',
   texto TEXT NOT NULL DEFAULT '',
-  criado_em TEXT NOT NULL
+  criado_em TEXT NOT NULL,
+  UNIQUE (chat_id, wa_id)
 );
-CREATE INDEX IF NOT EXISTS idx_mensagens_chat ON mensagens(chat_jid, id);
+CREATE INDEX IF NOT EXISTS idx_mensagens_chat ON mensagens(chat_id, id);
 CREATE INDEX IF NOT EXISTS idx_mensagens_atendimento ON mensagens(atendimento_id, id);
 `;
 
+const VERSAO_ESQUEMA = 2;
 const agora = () => new Date().toISOString();
 
 const SELECT_ATENDIMENTO = `
-  SELECT a.*, s.nome AS setor_nome, c.nome AS chat_nome, c.tipo AS chat_tipo, t.nome AS atendente_nome,
+  SELECT a.*, s.nome AS setor_nome, c.nome AS chat_nome, c.tipo AS chat_tipo, c.jid AS chat_jid,
+    c.canal_id, n.nome AS canal_nome, t.nome AS atendente_nome,
     (SELECT texto FROM mensagens m WHERE m.atendimento_id = a.id ORDER BY m.id DESC LIMIT 1) AS ultima_mensagem
   FROM atendimentos a
   JOIN setores s ON s.id = a.setor_id
-  JOIN chats c ON c.jid = a.chat_jid
+  JOIN chats c ON c.id = a.chat_id
+  JOIN canais n ON n.id = c.canal_id
   LEFT JOIN atendentes t ON t.id = a.atendente_id`;
 
 export function abrirBanco(arquivo) {
   if (arquivo !== ":memory:") fs.mkdirSync(path.dirname(arquivo), { recursive: true });
-  const db = new DatabaseSync(arquivo);
+  let db = new DatabaseSync(arquivo);
+  const versao = db.prepare("PRAGMA user_version").get().user_version;
+  const temDados = db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name = 'atendentes'").get().n > 0;
+  if (temDados && versao !== VERSAO_ESQUEMA) {
+    // Banco de uma versão anterior (antes dos múltiplos números): guarda uma cópia e começa do zero.
+    db.close();
+    const copia = `${arquivo}.v${versao}-${Date.now()}`;
+    fs.renameSync(arquivo, copia);
+    for (const sufixo of ["-wal", "-shm"]) fs.rmSync(arquivo + sufixo, { force: true });
+    console.warn(`Banco de versão anterior guardado em ${copia}; um banco novo foi criado.`);
+    db = new DatabaseSync(arquivo);
+  }
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
   db.exec(ESQUEMA);
+  db.exec(`PRAGMA user_version = ${VERSAO_ESQUEMA}`);
 
   const um = (sql, ...p) => db.prepare(sql).get(...p);
   const todos = (sql, ...p) => db.prepare(sql).all(...p);
@@ -87,7 +116,15 @@ export function abrirBanco(arquivo) {
   function comSetores(atendente) {
     if (!atendente) return null;
     const setores = todos("SELECT setor_id FROM atendente_setor WHERE atendente_id = ?", atendente.id).map((l) => l.setor_id);
-    return { ...atendente, admin: !!atendente.admin, ativo: !!atendente.ativo, setores };
+    const canais = todos("SELECT canal_id FROM atendente_canal WHERE atendente_id = ?", atendente.id).map((l) => l.canal_id);
+    return { ...atendente, admin: !!atendente.admin, ativo: !!atendente.ativo, setores, canais };
+  }
+
+  function definirCanaisDoAtendente(id, canais) {
+    exec("DELETE FROM atendente_canal WHERE atendente_id = ?", id);
+    for (const canalId of new Set(canais || [])) {
+      exec("INSERT INTO atendente_canal (atendente_id, canal_id) VALUES (?, ?)", id, canalId);
+    }
   }
 
   function definirSetoresDoAtendente(id, setores) {
@@ -115,16 +152,19 @@ export function abrirBanco(arquivo) {
 
     // ---------- atendentes ----------
     contarAtendentes: () => um("SELECT COUNT(*) AS n FROM atendentes").n,
-    criarAtendente({ nome, usuario, senhaHash, admin = false, setores = [] }) {
+    criarAtendente({ nome, email, senhaHash, admin = false, setores = [], canais = [] }) {
       const r = exec(
-        "INSERT INTO atendentes (nome, usuario, senha_hash, admin) VALUES (?, ?, ?, ?)",
-        nome, usuario, senhaHash, admin ? 1 : 0,
+        "INSERT INTO atendentes (nome, email, senha_hash, admin) VALUES (?, ?, ?, ?)",
+        nome, email, senhaHash, admin ? 1 : 0,
       );
       const id = Number(r.lastInsertRowid);
       definirSetoresDoAtendente(id, setores);
+      definirCanaisDoAtendente(id, canais);
       return id;
     },
-    atualizarAtendente(id, { nome, senhaHash, admin, ativo, setores }) {
+    atualizarAtendente(id, { nome, email, senhaHash, admin, ativo, setores, canais }) {
+      if (email !== undefined) exec("UPDATE atendentes SET email = ? WHERE id = ?", email, id);
+      if (canais !== undefined) definirCanaisDoAtendente(id, canais);
       if (nome !== undefined) exec("UPDATE atendentes SET nome = ? WHERE id = ?", nome, id);
       if (senhaHash !== undefined) exec("UPDATE atendentes SET senha_hash = ? WHERE id = ?", senhaHash, id);
       if (admin !== undefined) exec("UPDATE atendentes SET admin = ? WHERE id = ?", admin ? 1 : 0, id);
@@ -135,22 +175,34 @@ export function abrirBanco(arquivo) {
       if (setores !== undefined) definirSetoresDoAtendente(id, setores);
     },
     buscarAtendente: (id) => comSetores(um("SELECT * FROM atendentes WHERE id = ?", id)),
-    buscarAtendentePorUsuario: (usuario) => comSetores(um("SELECT * FROM atendentes WHERE usuario = ?", usuario)),
+    buscarAtendentePorEmail: (email) => comSetores(um("SELECT * FROM atendentes WHERE email = ?", email)),
     listarAtendentes: () => todos("SELECT * FROM atendentes ORDER BY nome").map(comSetores),
     contarAdminsAtivos: () => um("SELECT COUNT(*) AS n FROM atendentes WHERE admin = 1 AND ativo = 1").n,
 
-    /** Atendente ativo do setor com menos atendimentos em aberto (distribuição equilibrada). */
-    atendenteMenosOcupado(setorId) {
+    /** Atendente ativo, do setor e com acesso ao número, com menos atendimentos em aberto. */
+    atendenteMenosOcupado(setorId, canalId) {
       const linha = um(
         `SELECT t.id,
            (SELECT COUNT(*) FROM atendimentos a WHERE a.atendente_id = t.id AND a.status != 'resolvido') AS carga
-         FROM atendentes t JOIN atendente_setor x ON x.atendente_id = t.id
-         WHERE x.setor_id = ? AND t.ativo = 1
+         FROM atendentes t
+         JOIN atendente_setor x ON x.atendente_id = t.id
+         JOIN atendente_canal k ON k.atendente_id = t.id
+         WHERE x.setor_id = ? AND k.canal_id = ? AND t.ativo = 1
          ORDER BY carga ASC, t.id ASC LIMIT 1`,
-        setorId,
+        setorId, canalId,
       );
       return linha?.id ?? null;
     },
+
+    // ---------- canais (números de WhatsApp) ----------
+    criarCanal: (nome) => Number(exec("INSERT INTO canais (nome) VALUES (?)", nome).lastInsertRowid),
+    atualizarCanal(id, { nome, ativo }) {
+      if (nome !== undefined) exec("UPDATE canais SET nome = ? WHERE id = ?", nome, id);
+      if (ativo !== undefined) exec("UPDATE canais SET ativo = ? WHERE id = ?", ativo ? 1 : 0, id);
+    },
+    buscarCanal: (id) => um("SELECT * FROM canais WHERE id = ?", id),
+    listarCanais: ({ inativos = false } = {}) =>
+      todos(`SELECT * FROM canais ${inativos ? "" : "WHERE ativo = 1"} ORDER BY id`).map((c) => ({ ...c, ativo: !!c.ativo })),
 
     // ---------- sessões do painel ----------
     criarSessao: (token, atendenteId, expiraEm) =>
@@ -162,41 +214,43 @@ export function abrirBanco(arquivo) {
     apagarSessao: (token) => exec("DELETE FROM sessoes WHERE token = ?", token),
 
     // ---------- chats e mensagens ----------
-    salvarChat({ jid, tipo, nome }) {
+    /** Cria ou atualiza o chat daquele número e devolve o id. */
+    salvarChat({ canalId, jid, tipo, nome }) {
       exec(
-        `INSERT INTO chats (jid, tipo, nome) VALUES (?, ?, ?)
-         ON CONFLICT(jid) DO UPDATE SET nome = CASE WHEN excluded.nome != '' THEN excluded.nome ELSE chats.nome END`,
-        jid, tipo, nome || "",
+        `INSERT INTO chats (canal_id, jid, tipo, nome) VALUES (?, ?, ?, ?)
+         ON CONFLICT(canal_id, jid) DO UPDATE SET nome = CASE WHEN excluded.nome != '' THEN excluded.nome ELSE chats.nome END`,
+        canalId, jid, tipo, nome || "",
       );
+      return um("SELECT id FROM chats WHERE canal_id = ? AND jid = ?", canalId, jid).id;
     },
-    buscarChat: (jid) => um("SELECT * FROM chats WHERE jid = ?", jid),
+    buscarChat: (id) => um("SELECT * FROM chats WHERE id = ?", id),
 
     /** Devolve o id da mensagem, ou null se ela já existia (mesmo wa_id). */
     inserirMensagem(m) {
       const r = exec(
         `INSERT OR IGNORE INTO mensagens
-           (wa_id, chat_jid, atendimento_id, direcao, autor_jid, autor_nome, atendente_id, tipo, texto, criado_em)
+           (wa_id, chat_id, atendimento_id, direcao, autor_jid, autor_nome, atendente_id, tipo, texto, criado_em)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        m.waId ?? null, m.chatJid, m.atendimentoId ?? null, m.direcao, m.autorJid || "", m.autorNome || "",
+        m.waId ?? null, m.chatId, m.atendimentoId ?? null, m.direcao, m.autorJid || "", m.autorNome || "",
         m.atendenteId ?? null, m.tipo || "texto", m.texto || "", m.criadoEm || agora(),
       );
       return r.changes ? Number(r.lastInsertRowid) : null;
     },
     /** Corrige a autoria de uma mensagem de saída já registrada (eco do WhatsApp chegou antes). */
-    atribuirMensagem(waId, { atendimentoId, atendenteId, autorNome, texto }) {
+    atribuirMensagem(chatId, waId, { atendimentoId, atendenteId, autorNome, texto }) {
       exec(
-        "UPDATE mensagens SET atendimento_id = ?, atendente_id = ?, autor_nome = ?, texto = ? WHERE wa_id = ?",
-        atendimentoId, atendenteId, autorNome, texto, waId,
+        "UPDATE mensagens SET atendimento_id = ?, atendente_id = ?, autor_nome = ?, texto = ? WHERE chat_id = ? AND wa_id = ?",
+        atendimentoId, atendenteId, autorNome, texto, chatId, waId,
       );
     },
     buscarMensagens(ids) {
       if (!ids.length) return [];
       return todos(`SELECT * FROM mensagens WHERE id IN (${ids.map(() => "?").join(",")}) ORDER BY id`, ...ids);
     },
-    ultimasMensagensDoChat: (jid, limite, antesDoId) =>
+    ultimasMensagensDoChat: (chatId, limite, antesDoId) =>
       todos(
-        "SELECT * FROM mensagens WHERE chat_jid = ? AND id < ? ORDER BY id DESC LIMIT ?",
-        jid, antesDoId ?? Number.MAX_SAFE_INTEGER, limite,
+        "SELECT * FROM mensagens WHERE chat_id = ? AND id < ? ORDER BY id DESC LIMIT ?",
+        chatId, antesDoId ?? Number.MAX_SAFE_INTEGER, limite,
       ).reverse(),
     mensagensDoAtendimento: (id) =>
       todos(
@@ -209,11 +263,11 @@ export function abrirBanco(arquivo) {
     },
 
     // ---------- atendimentos ----------
-    criarAtendimento({ chatJid, setorId, atendenteId, urgencia, resumo, motivo }) {
+    criarAtendimento({ chatId, setorId, atendenteId, urgencia, resumo, motivo }) {
       const r = exec(
-        `INSERT INTO atendimentos (chat_jid, setor_id, atendente_id, urgencia, resumo, motivo, criado_em, atualizado_em)
+        `INSERT INTO atendimentos (chat_id, setor_id, atendente_id, urgencia, resumo, motivo, criado_em, atualizado_em)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        chatJid, setorId, atendenteId ?? null, urgencia || "normal", resumo || "", motivo || "", agora(), agora(),
+        chatId, setorId, atendenteId ?? null, urgencia || "normal", resumo || "", motivo || "", agora(), agora(),
       );
       return Number(r.lastInsertRowid);
     },
@@ -226,16 +280,21 @@ export function abrirBanco(arquivo) {
       exec("UPDATE atendimentos SET atualizado_em = ? WHERE id = ?", agora(), id);
     },
     buscarAtendimento: (id) => um(`${SELECT_ATENDIMENTO} WHERE a.id = ?`, id),
-    atendimentosAbertosDoChat: (jid) =>
-      todos(`${SELECT_ATENDIMENTO} WHERE a.chat_jid = ? AND a.status != 'resolvido' ORDER BY a.atualizado_em DESC`, jid),
-    /** setores = null lista de todos os setores (admin). */
-    listarAtendimentos({ setores = null, atendenteId = null, resolvidos = false, limite = 200 }) {
+    atendimentosAbertosDoChat: (chatId) =>
+      todos(`${SELECT_ATENDIMENTO} WHERE a.chat_id = ? AND a.status != 'resolvido' ORDER BY a.atualizado_em DESC, a.id DESC`, chatId),
+    /** setores/canais = null significa "todos" (administrador). */
+    listarAtendimentos({ setores = null, canais = null, atendenteId = null, resolvidos = false, limite = 200 }) {
       const filtros = [resolvidos ? "a.status = 'resolvido'" : "a.status != 'resolvido'"];
       const params = [];
       if (setores) {
         if (!setores.length) return [];
         filtros.push(`a.setor_id IN (${setores.map(() => "?").join(",")})`);
         params.push(...setores);
+      }
+      if (canais) {
+        if (!canais.length) return [];
+        filtros.push(`c.canal_id IN (${canais.map(() => "?").join(",")})`);
+        params.push(...canais);
       }
       if (atendenteId) {
         filtros.push("a.atendente_id = ?");

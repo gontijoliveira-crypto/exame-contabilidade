@@ -14,7 +14,9 @@ export function criarSimulador() {
     aoReceberMensagem: (fn) => (aoReceber = fn),
     aoMudarEstado: () => {},
     iniciar: async () => {},
-    estado: () => ({ modo: "simulador", status: "conectado", qr: null }),
+    estado: () => ({ modo: "simulador", status: "conectado", qr: null, numero: null }),
+    parar: async () => {},
+    desvincular: async () => {},
     async enviarTexto(jid, texto) {
       const waId = `sim-${randomUUID()}`;
       enviadas.push({ jid, texto, waId });
