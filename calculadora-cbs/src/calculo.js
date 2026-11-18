@@ -271,7 +271,11 @@ export function resumirCalculo(corpo, { aviso = null, pedido }) {
     cbs,
     ibsUf,
     ibsMun,
-    semIncidencia: grupo === null, // isenção, imunidade ou não incidência: a Receita não devolve alíquotas
+    // Sem o grupo de alíquotas, a Receita não calculou tributo nesta operação. Só nos CST 4xx (isenção,
+    // imunidade e não incidência) isso significa que não há tributo; nos demais (por exemplo, o 820,
+    // tributação em regime ou documento específico), o tributo existe e é apurado de outra forma.
+    semIncidencia: grupo === null && /^4\d\d$/.test(pedido.cst),
+    regimeEspecifico: grupo === null && !/^4\d\d$/.test(pedido.cst),
     simulado: Boolean(objeto.calculoSimulado) || codigoAviso !== null,
     aviso: codigoAviso ? AVISOS[codigoAviso] : objeto.calculoSimulado ? AVISOS[6] : null,
     memoria: { cbs: trecho(memoria.cbs, 1500), ibsUf: trecho(memoria.ibsUF, 1500), ibsMun: trecho(memoria.ibsMun, 1500) },

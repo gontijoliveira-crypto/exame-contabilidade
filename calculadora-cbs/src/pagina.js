@@ -95,12 +95,12 @@ ${previa.join("\n")}
           <div class="campo">
             <label for="valor">Valor da operação (R$)</label>
             <input id="valor" name="valor" type="text" inputmode="decimal" autocomplete="off" placeholder="1.000,00" required aria-describedby="dica-valor">
-            <p class="dica" id="dica-valor">É a base de cálculo dos tributos.</p>
+            <p class="dica" id="dica-valor">Valor cobrado, com frete e encargos, sem descontos incondicionais e sem os tributos que não entram na base (LC 214/2025, art. 12).</p>
           </div>
           <div class="campo">
             <label for="data">Data do fato gerador</label>
             <input id="data" name="data" type="date" min="${DATA_MINIMA}" max="${DATA_MAXIMA}" required aria-describedby="dica-data">
-            <p class="dica" id="dica-data">Em geral, a data da venda ou do serviço.</p>
+            <p class="dica" id="dica-data">Em geral, a data do fornecimento: entrega do bem ou prestação do serviço (LC 214/2025, art. 10).</p>
           </div>
         </div>
 
@@ -112,6 +112,7 @@ ${previa.join("\n")}
           <div class="campo">
             <label for="municipio">Município</label>
             <select id="municipio" name="municipio" required disabled><option value="">Escolha a UF</option></select>
+            <button type="button" class="secundario" id="tentar-municipios" hidden>Carregar os municípios de novo</button>
           </div>
         </div>
 
@@ -123,7 +124,8 @@ ${previa.join("\n")}
 
         <div class="campo">
           <label for="cClassTrib">Classificação tributária (cClassTrib)</label>
-          <select id="cClassTrib" name="cClassTrib" required disabled><option value="">Escolha o CST</option></select>
+          <select id="cClassTrib" name="cClassTrib" required disabled aria-describedby="descricao-classtrib"><option value="">Escolha o CST</option></select>
+          <p class="dica" id="descricao-classtrib" hidden></p>
         </div>
 
         <div class="linha">
@@ -192,7 +194,7 @@ ${previa.join("\n")}
           </div>
         </fieldset>
 
-        <div class="alerta erro" id="erro-form" role="alert" hidden></div>
+        <div class="alerta erro" id="erro-form" role="alert" tabindex="-1" hidden></div>
         <button type="submit" class="primario" id="calcular" disabled>Calcular</button>
       </form>
     </section>
@@ -269,7 +271,11 @@ ${previa.join("\n")}
 }
 
 /** Página simples para endereços que não existem. */
-export function renderizarNaoEncontrada({ marca }) {
+export function renderizarNaoEncontrada({ marca, logo = null }) {
+  const icone = marca.icone ? `/${esc(marca.icone)}` : "/icone.svg";
+  const marcaNaCapa = marca.logo
+    ? `<img class="logo" src="/${esc(marca.logo)}" alt="${esc(marca.nome)}"${logo ? ` width="${logo.largura}" height="${logo.altura}"` : ""}>`
+    : `<span class="logo-texto">${esc(marca.nome)}</span>`;
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -277,10 +283,18 @@ export function renderizarNaoEncontrada({ marca }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Página não encontrada · ${esc(marca.nome)}</title>
+<meta name="theme-color" content="${esc(marca.cores.primaria)}">
+<link rel="icon" href="${icone}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="${FONTES}">
 <link rel="stylesheet" href="/estilo.css">
 <link rel="stylesheet" href="/marca.css">
 </head>
 <body>
+<header class="capa">
+  <div class="in"><a class="marca" href="/">${marcaNaCapa}</a></div>
+</header>
 <main class="wrap perdido">
   <h1>Página não encontrada</h1>
   <p><a href="/">Ir para a ${esc(TITULO)}</a></p>

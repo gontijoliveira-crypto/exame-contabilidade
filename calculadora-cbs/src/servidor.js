@@ -10,7 +10,7 @@ import zlib from "node:zlib";
 import { ErroFormato, ErroPedido, conferirData, montarOperacao, montarOperacaoSubcontratada, resumirCalculo, resumirCredito, traduzirErro, validarPedido } from "./calculo.js";
 import { cssDaMarca, iconeDaMarca } from "./marca.js";
 import { renderizarNaoEncontrada, renderizarPagina } from "./pagina.js";
-import { ErroBloqueio, ErroDaReceita, ErroIndisponivel } from "./receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel, ErroOcupado } from "./receita.js";
 
 class ErroHttp extends Error {
   constructor(status, mensagem, cabecalhos = {}) {
@@ -125,8 +125,10 @@ function lerJson(req) {
     req.on("data", (parte) => {
       tamanho += parte.length;
       if (tamanho > MAX_CORPO) {
-        falha(new ErroHttp(413, "Pedido grande demais."));
-        req.destroy();
+        // Para de guardar o que chega (descarta o resto) e responde 413 fechando a conexão.
+        req.removeAllListeners("data");
+        req.resume();
+        falha(new ErroHttp(413, "Pedido grande demais.", { Connection: "close" }));
         return;
       }
       partes.push(parte);
@@ -154,7 +156,7 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
     }),
     HTML,
   );
-  const naoEncontrada = recurso(renderizarNaoEncontrada({ marca }), HTML, "no-store");
+  const naoEncontrada = recurso(renderizarNaoEncontrada({ marca, logo: marca.logo ? dimensoesPng(publicos.get(`/${marca.logo}`)?.dados) : null }), HTML, "no-store");
   const estiloDaMarca = recurso(cssDaMarca(marca.cores), TIPOS[".css"]);
   const icone = recurso(iconeDaMarca(marca), TIPOS[".svg"]);
 
@@ -162,6 +164,11 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
   const { calculosPorMinuto = 60, consultasPorMinuto = 300 } = limites;
   const dentroDoLimiteDeCalculos = criarLimitador(calculosPorMinuto, 60_000, agora);
   const dentroDoLimiteDeConsultas = criarLimitador(consultasPorMinuto, 60_000, agora);
+  // Trocar de data busca uma lista nova na Receita: limite próprio, bem menor que o das demais consultas.
+  const dentroDoLimiteDeDatas = criarLimitador(limites.datasPorMinuto ?? 20, 60_000, agora);
+  // Cada visitante pode ter poucas consultas à Receita em andamento, para ninguém ocupar todas as vagas.
+  const maxPorVisitante = limites.simultaneasPorVisitante ?? 2;
+  const emAndamento = new Map(); // ip → pedidos em andamento
 
   function enviar(req, res, status, r, extras = {}) {
     const cabecalhos = { "Content-Type": r.tipo, "Cache-Control": r.cache, ...extras };
@@ -188,8 +195,21 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
   };
 
   async function api(req, res, url) {
-    const rota = url.pathname.slice("/api/".length);
     const ip = ipDoCliente(req, origemDoIp);
+    const atuais = emAndamento.get(ip) || 0;
+    if (atuais >= maxPorVisitante) throw new ErroHttp(429, "Aguarde a consulta anterior terminar.", { "Retry-After": "2" });
+    emAndamento.set(ip, atuais + 1);
+    try {
+      return await rotaDaApi(req, res, url, ip);
+    } finally {
+      const resto = (emAndamento.get(ip) || 1) - 1;
+      if (resto > 0) emAndamento.set(ip, resto);
+      else emAndamento.delete(ip);
+    }
+  }
+
+  async function rotaDaApi(req, res, url, ip) {
+    const rota = url.pathname.slice("/api/".length);
 
     if (rota === "calcular") {
       if (req.method !== "POST") throw new ErroHttp(405, "Método não permitido.", { Allow: "POST" });
@@ -222,6 +242,10 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
       if (!(await receita.ufs()).some((u) => u.sigla === uf)) throw new ErroPedido("Escolha a UF.", "uf");
       return json(req, res, 200, await receita.municipios(uf), CACHE_LISTAS);
     }
+    // Só conta as datas que exigem consulta nova à Receita (a de hoje, já guardada, não conta).
+    if (rota === "situacoes" && !receita.situacoesGuardadas?.(url.searchParams.get("data")) && !dentroDoLimiteDeDatas(ip)) {
+      throw new ErroHttp(429, "Muitas trocas de data em pouco tempo. Aguarde um minuto e tente de novo.", { "Retry-After": "60" });
+    }
     if (rota === "situacoes") return json(req, res, 200, await receita.situacoes(conferirData(url.searchParams.get("data"))), CACHE_LISTAS);
     if (rota === "versao") return json(req, res, 200, await receita.versao(), CACHE_LISTAS);
     throw new ErroHttp(404, "Rota não encontrada.");
@@ -235,6 +259,9 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
     if (erro instanceof ErroBloqueio) {
       log.warn(`Consulta bloqueada pelo firewall da Receita Federal (${req.url}). Muitas consultas a partir deste servidor?`);
       return json(req, res, 503, { erro: "A Calculadora da Receita Federal está recusando consultas no momento.", detalhe: "Tente de novo em alguns minutos.", campo: null }, "no-store", { "Retry-After": "120" });
+    }
+    if (erro instanceof ErroOcupado) {
+      return json(req, res, 503, { erro: "Muitas pessoas usando a calculadora agora.", detalhe: "Tente de novo em alguns segundos.", campo: null }, "no-store", { "Retry-After": "5" });
     }
     if (erro instanceof ErroIndisponivel) {
       log.warn(`Receita Federal indisponível: ${erro.message}`);
@@ -251,7 +278,13 @@ export function criarServidor({ marca, receita, raiz, urlPublica = "", origemDoI
   return async function atender(req, res) {
     for (const [nome, valor] of Object.entries(SEGURANCA)) res.setHeader(nome, valor);
     try {
-      const url = new URL(req.url, "http://calculadora.local");
+      let url;
+      try {
+        url = new URL(req.url, "http://calculadora.local");
+        decodeURIComponent(url.pathname);
+      } catch {
+        return json(req, res, 400, { erro: "Endereço inválido.", detalhe: null, campo: null });
+      }
       const caminho = url.pathname;
       if (caminho.startsWith("/api/")) return await api(req, res, url);
       exigirLeitura(req);

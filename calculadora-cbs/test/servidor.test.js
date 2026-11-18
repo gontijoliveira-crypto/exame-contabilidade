@@ -5,7 +5,7 @@ import path from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
-import { ErroBloqueio, ErroDaReceita, ErroIndisponivel } from "../src/receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel, ErroOcupado } from "../src/receita.js";
 import { criarLimitador, criarServidor, ipDoCliente } from "../src/servidor.js";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -354,4 +354,57 @@ test("bloqueio do firewall da Receita vira 503 com mensagem própria", async () 
   assert.equal(r.status, 503);
   assert.equal(r.headers.get("retry-after"), "120");
   assert.match((await r.json()).erro, /recusando consultas/);
+});
+
+test("cada visitante tem no máximo duas consultas à Receita em andamento", async () => {
+  let liberar;
+  const porta = new Promise((ok) => { liberar = ok; });
+  const { calcular, pedir } = await subir({ receita: { calcular: async () => { await porta; return { corpo: casos.integral.resposta.corpo, aviso: null }; } } });
+  const a = calcular();
+  const b = calcular();
+  await new Promise((ok) => setTimeout(ok, 50));
+  const terceira = await calcular();
+  assert.equal(terceira.status, 429);
+  assert.match((await terceira.json()).erro, /consulta anterior/);
+  liberar();
+  assert.deepEqual([(await a).status, (await b).status], [200, 200]);
+  assert.equal((await pedir("/api/ufs")).status, 200); // vagas devolvidas
+});
+
+test("trocas de data têm limite próprio", async () => {
+  const { pedir } = await subir({ limites: { datasPorMinuto: 2 } });
+  assert.equal((await pedir("/api/situacoes?data=2026-01-01")).status, 200);
+  assert.equal((await pedir("/api/situacoes?data=2026-01-02")).status, 200);
+  const r = await pedir("/api/situacoes?data=2026-01-03");
+  assert.equal(r.status, 429);
+  assert.match((await r.json()).erro, /trocas de data/);
+  assert.equal((await pedir("/api/ufs")).status, 200);
+});
+
+test("corpo grande demais recebe 413 de verdade", async () => {
+  const { pedir } = await subir();
+  const r = await pedir("/api/calcular", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...PEDIDO, extra: "x".repeat(20_000) }) });
+  assert.equal(r.status, 413);
+});
+
+test("endereço malformado recebe 400, sem erro interno", async () => {
+  const { cru } = await subir();
+  for (const caminho of ["/%E0%A4%A", "/api/%zz", "/marca/%"]) {
+    const r = await cru(caminho);
+    assert.equal(r.status, 400, caminho);
+  }
+});
+
+test("vagas locais esgotadas têm mensagem própria", async () => {
+  const { calcular } = await subir({ receita: { calcular: async () => { throw new ErroOcupado("cheio"); } } });
+  const r = await calcular();
+  assert.equal(r.status, 503);
+  assert.match((await r.json()).erro, /Muitas pessoas/);
+});
+
+test("datas já guardadas não contam no limite de trocas de data", async () => {
+  const { pedir } = await subir({ limites: { datasPorMinuto: 1 }, receita: { situacoesGuardadas: (d) => d === "2026-11-18" } });
+  for (let i = 0; i < 5; i++) assert.equal((await pedir("/api/situacoes?data=2026-11-18")).status, 200);
+  assert.equal((await pedir("/api/situacoes?data=2026-01-01")).status, 200);
+  assert.equal((await pedir("/api/situacoes?data=2026-01-02")).status, 429);
 });

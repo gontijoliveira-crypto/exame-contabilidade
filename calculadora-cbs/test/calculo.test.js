@@ -287,3 +287,13 @@ test("saldo pequeno e negativo mantém o sinal e os centavos", () => {
   const r = resumirCalculo(casos.semIncidencia.resposta.corpo, { pedido: validarPedido({ ...base, cst: "400", cClassTrib: "400001" }) });
   assert.equal(resumirCredito({ tipo: "autonomo", valor: "0.03", cbs: "100", ibs: "0" }, r).saldo.total, "-0.02");
 });
+
+test("sem grupo de alíquotas: isenção só nos CST 4xx; nos demais (ex.: 820) é regime específico", () => {
+  const isento = resumir("semIncidencia", { ...base, cst: "410", cClassTrib: "410015" });
+  assert.deepEqual([isento.semIncidencia, isento.regimeEspecifico], [true, false]);
+  // Mesma forma de resposta (sem gIBSCBS), mas o CST 820 é tributado em documento ou regime específico.
+  const especifico = resumir("semIncidencia", { ...base, cst: "820", cClassTrib: "820001" });
+  assert.deepEqual([especifico.semIncidencia, especifico.regimeEspecifico], [false, true]);
+  const integral = resumir("integral");
+  assert.deepEqual([integral.semIncidencia, integral.regimeEspecifico], [false, false]);
+});

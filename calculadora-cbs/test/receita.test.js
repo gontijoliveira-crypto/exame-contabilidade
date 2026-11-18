@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErroBloqueio, ErroDaReceita, ErroIndisponivel, criarReceita, nomeProprio } from "../src/receita.js";
+import { ErroBloqueio, ErroDaReceita, ErroIndisponivel, ErroOcupado, criarReceita, nomeProprio } from "../src/receita.js";
 
 const silencioso = { warn() {}, error() {} };
 const json = (corpo, status = 200, cabecalhos = {}) => new Response(JSON.stringify(corpo), { status, headers: { "content-type": "application/json", ...cabecalhos } });
@@ -76,7 +76,7 @@ test("falha passageira é tentada de novo, com espera crescente", async () => {
 });
 
 test("depois das tentativas, a falha vira 'indisponível'", async () => {
-  const { receita, chamadas } = montar([json({}, 500), json({}, 429), new Error("tempo esgotado")]);
+  const { receita, chamadas } = montar([json({}, 500), json({}, 502), new Error("tempo esgotado")]);
   await assert.rejects(receita.ufs(), ErroIndisponivel);
   assert.equal(chamadas.length, 3);
 });
@@ -160,7 +160,7 @@ test("há um teto de chamadas simultâneas à Receita", async () => {
   const { receita } = montar([lenta, lenta], { maxSimultaneas: 2 });
   const a = receita.calcular({});
   const b = receita.calcular({});
-  await assert.rejects(receita.calcular({}), ErroIndisponivel);
+  await assert.rejects(receita.calcular({}), ErroOcupado);
   liberar();
   await Promise.all([a, b]);
 });
@@ -175,4 +175,60 @@ test("bloqueio do firewall da Receita: não repete a chamada e é identificado",
   const primeira = await lista.receita.ufs();
   lista.avancar(25 * 3_600_000);
   assert.deepEqual(await lista.receita.ufs(), primeira);
+});
+
+test("o tempo limite vale também para a leitura do corpo (resposta que trava no meio)", async () => {
+  const travada = () => new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode("{")); } }), { status: 200 });
+  const receita = criarReceita({ base: "https://receita.test/api", buscar: async (url, init) => {
+    const r = travada();
+    // simula o fetch real: o corpo para de chegar quando o sinal é abortado
+    init.signal.addEventListener("abort", () => r.body.cancel().catch(() => {}));
+    return { status: 200, ok: true, headers: new Headers(), text: () => new Promise((_, falha) => init.signal.addEventListener("abort", () => falha(init.signal.reason))) };
+  }, tentativas: 1, tempoLimiteMs: 50, maxSimultaneas: 1, log: silencioso });
+  await assert.rejects(receita.calcular({}), (erro) => erro instanceof ErroIndisponivel && !(erro instanceof ErroOcupado));
+  await assert.rejects(receita.calcular({}), (erro) => !(erro instanceof ErroOcupado), "a vaga foi devolvida");
+});
+
+test("HTTP 429 não é repetido e pausa as consultas por um tempo", async () => {
+  const { receita, chamadas, avancar } = montar([json({}, 429), json({ objetos: [] })]);
+  await assert.rejects(receita.calcular({}), ErroBloqueio);
+  assert.equal(chamadas.length, 1);
+  await assert.rejects(receita.calcular({}), ErroBloqueio); // durante a pausa, nem chama
+  assert.equal(chamadas.length, 1);
+  avancar(121_000);
+  assert.deepEqual((await receita.calcular({})).corpo, { objetos: [] });
+});
+
+test("muitas datas diferentes não apagam as listas de UFs e municípios", async () => {
+  const sit = () => json([{ codigo: "000", descricao: "x", classificacoesTributarias: [{ codigo: "000001", descricao: "y" }] }]);
+  const respostas = [json(UFS)];
+  for (let i = 0; i < 70; i++) respostas.push(sit());
+  const { receita, chamadas } = montar(respostas);
+  await receita.ufs();
+  for (let i = 1; i <= 70; i++) await receita.situacoes(`2026-${String(Math.ceil(i / 28)).padStart(2, "0")}-${String(((i - 1) % 28) + 1).padStart(2, "0")}`);
+  const antes = chamadas.length;
+  await receita.ufs();
+  assert.equal(chamadas.length, antes, "UFs continuam guardadas");
+});
+
+test("na falha, a cópia vencida passa a valer mais 5 minutos sem novas esperas", async () => {
+  const { receita, chamadas, avancar } = montar([json(UFS), new Error("fora"), new Error("fora"), new Error("fora"), json(UFS)]);
+  await receita.ufs();
+  avancar(25 * 3_600_000);
+  await receita.ufs(); // 3 tentativas, usa a cópia
+  assert.equal(chamadas.length, 4);
+  await receita.ufs(); // dentro da sobrevida: nenhuma chamada
+  assert.equal(chamadas.length, 4);
+  avancar(6 * 60_000);
+  await receita.ufs();
+  assert.equal(chamadas.length, 5);
+});
+
+test("situacoesGuardadas indica se a data já está na memória", async () => {
+  const { receita, avancar } = montar([json([{ codigo: "000", descricao: "x", classificacoesTributarias: [{ codigo: "000001", descricao: "y" }] }])]);
+  assert.equal(receita.situacoesGuardadas("2026-11-18"), false);
+  await receita.situacoes("2026-11-18");
+  assert.equal(receita.situacoesGuardadas("2026-11-18"), true);
+  avancar(7 * 3_600_000);
+  assert.equal(receita.situacoesGuardadas("2026-11-18"), false);
 });

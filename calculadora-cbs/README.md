@@ -84,9 +84,11 @@ Nenhuma variável é obrigatória. Veja [`.env.example`](.env.example).
 | `CABECALHO_IP` | Fora do Railway: nome do cabeçalho em que a hospedagem grava o IP do visitante. No Railway (`X-Real-IP`) é detectado sozinho. |
 | `RECEITA_API` | Endereço da API da Calculadora de Tributos. Veja a seção abaixo. |
 
-Há um limite de 60 cálculos e 300 consultas por minuto por visitante, para conter abuso. As listas
-ficam guardadas na memória do servidor (de 1 a 24 horas) e continuam valendo se a Receita ficar fora
-do ar por um tempo.
+Para conter abuso, cada visitante tem até 60 cálculos e 300 consultas por minuto, até 20 trocas de data
+que exijam lista nova da Receita por minuto, e no máximo 2 consultas em andamento ao mesmo tempo. Depois
+de um bloqueio do firewall da Receita, o servidor passa 2 minutos sem consultá-la e usa as listas
+guardadas. As listas ficam na memória do servidor (de 1 a 24 horas) e continuam valendo se a Receita
+ficar fora do ar por um tempo.
 
 ## De onde vem o cálculo
 

@@ -13,6 +13,9 @@ export class ErroIndisponivel extends Error {}
  */
 export class ErroBloqueio extends ErroIndisponivel {}
 
+/** Muitas consultas deste servidor em andamento ao mesmo tempo (limite local, não é a Receita). */
+export class ErroOcupado extends ErroIndisponivel {}
+
 const PAGINA_DE_BLOQUEIO = /Request Rejected|requested URL was rejected/i;
 
 /** A Receita recusou o pedido (4xx) e explicou o motivo em `problema` (title, detail, type). */
@@ -26,7 +29,7 @@ export class ErroDaReceita extends Error {
 
 const HORA = 3_600_000;
 const MAX_RESPOSTA = 2_000_000; // caracteres; as maiores listas reais têm cerca de 40 mil
-const MAX_MEMORIA = 80; // listas guardadas (1 de UFs, até 27 de municípios, o resto por data)
+const MAX_MEMORIA = 60; // listas por data guardadas (as fixas, até 29, ficam à parte)
 const MINUSCULAS = new Set(["de", "do", "da", "dos", "das", "e"]);
 
 /** "MATO GROSSO DO SUL" → "Mato Grosso do Sul". */
@@ -49,28 +52,44 @@ export function criarReceita({
   tentativas = 3,
   tempoLimiteMs = 8_000,
   maxSimultaneas = 8,
+  pausaAposBloqueioMs = 120_000,
   log = console,
 }) {
   let emAndamento = 0;
+  let bloqueadoAte = 0; // depois de um bloqueio do firewall, o servidor fica um tempo sem consultar a Receita
+
+  /** Uma tentativa: o tempo limite vale até o fim da leitura do corpo, não só até os cabeçalhos. */
+  async function tentar(url, init) {
+    const controle = new AbortController();
+    const relogio = setTimeout(() => controle.abort(new Error("Tempo esgotado")), tempoLimiteMs);
+    try {
+      const resposta = await buscar(url, { ...init, signal: controle.signal });
+      const conteudo = await resposta.text();
+      return { resposta, conteudo };
+    } finally {
+      clearTimeout(relogio);
+    }
+  }
 
   /** Uma chamada à Receita, com novas tentativas quando a falha é passageira. */
   async function chamar(caminho, { metodo = "GET", corpo } = {}) {
-    if (emAndamento >= maxSimultaneas) throw new ErroIndisponivel("Muitas consultas ao mesmo tempo.");
+    if (agora() < bloqueadoAte) throw new ErroBloqueio("Pausa após bloqueio do firewall da Receita Federal.");
+    if (emAndamento >= maxSimultaneas) throw new ErroOcupado("Muitas consultas ao mesmo tempo.");
     emAndamento++;
     try {
       let ultima;
       for (let i = 0; i < tentativas; i++) {
         if (i > 0) await esperar(300 * 3 ** (i - 1));
         try {
-          const resposta = await buscar(base + caminho, {
+          const { resposta, conteudo } = await tentar(base + caminho, {
             method: metodo,
             headers: corpo ? { accept: "application/json", "content-type": "application/json" } : { accept: "application/json" },
             body: corpo ? JSON.stringify(corpo) : undefined,
-            signal: AbortSignal.timeout(tempoLimiteMs),
             redirect: "error",
           });
-          const conteudo = await resposta.text();
-          if (resposta.status >= 500 || resposta.status === 429 || resposta.status === 408) {
+          // 429: a Receita pediu para esperar; insistir só agrava. Não há nova tentativa.
+          if (resposta.status === 429) throw new ErroBloqueio("A Receita Federal pediu para reduzir as consultas (HTTP 429).");
+          if (resposta.status >= 500 || resposta.status === 408) {
             ultima = new Error(`HTTP ${resposta.status}`);
             continue;
           }
@@ -92,7 +111,12 @@ export function criarReceita({
           }
           return { corpo: json, cabecalhos: resposta.headers };
         } catch (erro) {
-          if (erro instanceof ErroDaReceita || erro instanceof ErroBloqueio) throw erro;
+          if (erro instanceof ErroBloqueio) {
+            bloqueadoAte = agora() + pausaAposBloqueioMs;
+            log.warn(`Receita Federal recusando consultas; pausa de ${Math.round(pausaAposBloqueioMs / 1000)} s.`);
+            throw erro;
+          }
+          if (erro instanceof ErroDaReceita) throw erro;
           ultima = erro;
         }
       }
@@ -102,11 +126,17 @@ export function criarReceita({
     }
   }
 
-  const memoria = new Map(); // chave → { valor, validoAte }; a ordem do Map é a de uso (a mais antiga sai primeiro)
+  // chave → { valor, validoAte }; a ordem do Map é a de uso (a mais antiga sai primeiro).
+  // As listas fixas (UFs, municípios, versão: até 29 chaves) ficam à parte das listas por data, para que
+  // pedidos com muitas datas diferentes não apaguem as cópias de que a página mais depende.
+  const fixas = new Map();
+  const porData = new Map();
   const pendentes = new Map(); // chave → promessa da consulta em curso (pedidos iguais esperam a mesma)
+  const SOBREVIDA_MS = 5 * 60_000; // cópia vencida usada numa falha passa a valer mais 5 min, sem nova espera
 
   /** Lista guardada por `validadeMs`. Se a Receita falhar e houver uma cópia antiga, ela é usada. */
   function consultar(chave, validadeMs, carregar) {
+    const memoria = chave.startsWith("situacoes:") ? porData : fixas;
     const guardada = memoria.get(chave);
     if (guardada && guardada.validoAte > agora()) {
       memoria.delete(chave);
@@ -124,6 +154,7 @@ export function criarReceita({
       } catch (erro) {
         if (guardada && erro instanceof ErroIndisponivel) {
           log.warn(`Receita indisponível; usando a cópia guardada de "${chave}".`);
+          guardada.validoAte = agora() + SOBREVIDA_MS;
           return guardada.valor;
         }
         throw erro;
@@ -177,6 +208,9 @@ export function criarReceita({
           .filter((s) => s.classificacoes.length > 0)
           .sort((a, b) => a.codigo.localeCompare(b.codigo));
       }),
+
+    /** A lista de situações desta data já está guardada e válida (não exigiria consulta à Receita)? */
+    situacoesGuardadas: (data) => (porData.get(`situacoes:${data}`)?.validoAte ?? 0) > agora(),
 
     /** Versão da calculadora e da base de dados da Receita. */
     versao: () =>

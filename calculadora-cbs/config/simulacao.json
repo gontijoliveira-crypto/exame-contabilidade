@@ -6,7 +6,7 @@
       "ate": "2027-12-31",
       "preencher": { "ibsEstadual": "0.05", "ibsMunicipal": "0.05" },
       "exemplo": { "cbs": "11.2" },
-      "nota": "IBS: em 2027 e 2028 a alíquota é de 0,05% estadual mais 0,05% municipal (ADCT, art. 127). CBS: a alíquota de 2027 ainda depende de resolução do Senado. Em 28/10/2026 o TCU calculou a alíquota de referência em 11,3% (Acórdão 2933/2026); se ela for confirmada, a CBS cobrada será de 11,2% (a referência menos 0,1 ponto percentual). Informação de 18/11/2026."
+      "nota": "IBS: em 2027 e 2028 a alíquota é de 0,05% estadual mais 0,05% municipal (ADCT, art. 127). CBS: a alíquota de referência de 2027 deve ser fixada pelo Senado até dezembro de 2026; em 28/10/2026 o TCU a calculou em 11,3% (Acórdão 2933/2026), e esse é o valor que vale se o Senado não decidir no prazo. Nesse caso, a alíquota padrão da CBS cobrada em 2027 será de 11,2% (a referência menos 0,1 ponto percentual). Informação de 18/11/2026."
     },
     {
       "de": "2028-01-01",

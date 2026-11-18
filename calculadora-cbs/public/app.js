@@ -13,6 +13,7 @@ const INICIO_ALIQUOTAS = "2027-01-01"; // a partir daqui a Receita pede as alíq
 let situacoes = [];
 let dataDasSituacoes = ""; // data usada na última lista de situações carregada
 let listasProntas = false;
+let ocupado = false; // cálculo em andamento
 
 // ---------- utilidades ----------
 const guardar = (chave, valor) => { try { localStorage.setItem(chave, valor); } catch { /* sem armazenamento: segue sem lembrar */ } };
@@ -59,12 +60,38 @@ function mostrarMensagem(caixa, titulo, detalhe) {
   caixa.hidden = false;
 }
 
-function marcarInvalido(campo) {
-  for (const c of Object.values(campos)) c.removeAttribute("aria-invalid");
-  if (campo && campos[campo]) {
-    campos[campo].setAttribute("aria-invalid", "true");
-    campos[campo].focus();
+/** Tira a marca de erro de todos os campos (e o texto de erro que fica junto de cada um). */
+function limparErrosDosCampos() {
+  for (const c of Object.values(campos)) {
+    c.removeAttribute("aria-invalid");
+    const ligados = (c.getAttribute("aria-describedby") || "").split(" ").filter((id) => id && id !== `erro-${c.id}`);
+    if (ligados.length) c.setAttribute("aria-describedby", ligados.join(" "));
+    else c.removeAttribute("aria-describedby");
   }
+  for (const e of document.querySelectorAll(".erro-campo")) e.remove();
+}
+
+/**
+ * Mostra o erro: junto do campo a corrigir (visível no celular, lido pelo leitor de tela ao focar o
+ * campo) e também na caixa acima do botão. Sem campo, o foco vai para a caixa de erro.
+ */
+function mostrarErro(titulo, detalhe, campo) {
+  limparErrosDosCampos();
+  const caixa = $("erro-form");
+  mostrarMensagem(caixa, titulo, detalhe);
+  const alvo = campo && campos[campo];
+  if (!alvo) {
+    caixa.focus();
+    return;
+  }
+  const junto = document.createElement("p");
+  junto.className = "erro-campo";
+  junto.id = `erro-${alvo.id}`;
+  junto.textContent = detalhe ? `${titulo} ${detalhe}` : titulo;
+  alvo.insertAdjacentElement("afterend", junto);
+  alvo.setAttribute("aria-invalid", "true");
+  alvo.setAttribute("aria-describedby", [junto.id, ...(alvo.getAttribute("aria-describedby") || "").split(" ").filter(Boolean)].join(" "));
+  alvo.focus();
 }
 
 // ---------- listas ----------
@@ -73,6 +100,7 @@ async function carregarMunicipios(preferido = "") {
   const uf = campos.uf.value;
   const pedido = ++pedidoDeMunicipios;
   preencher(campos.municipio, [], uf ? "Carregando…" : "Escolha a UF");
+  $("tentar-municipios").hidden = true;
   if (!uf) return;
   try {
     const lista = await api(`/api/municipios?uf=${encodeURIComponent(uf)}`);
@@ -81,9 +109,18 @@ async function carregarMunicipios(preferido = "") {
     if (preferido && lista.some((m) => String(m.codigo) === preferido)) campos.municipio.value = preferido;
   } catch (falha) {
     if (pedido !== pedidoDeMunicipios) return;
-    preencher(campos.municipio, [], "Não foi possível carregar");
-    mostrarMensagem($("erro-form"), falha.message, falha.detalhe);
+    preencher(campos.municipio, [], "A lista não carregou");
+    mostrarErro(`Não foi possível carregar os municípios. ${falha.message}`, "Use o botão abaixo da lista para tentar de novo.", null);
+    $("tentar-municipios").hidden = false;
   }
+}
+
+/** Mostra abaixo da lista a descrição inteira da classificação escolhida (no celular, a opção fica cortada). */
+function mostrarDescricaoDaClassificacao() {
+  const opcao = campos.cClassTrib.selectedOptions[0];
+  const texto = opcao && opcao.value ? opcao.textContent : "";
+  $("descricao-classtrib").textContent = texto;
+  $("descricao-classtrib").hidden = !texto;
 }
 
 function carregarClassificacoes(preferida = "") {
@@ -92,6 +129,7 @@ function carregarClassificacoes(preferida = "") {
   preencher(campos.cClassTrib, lista.map((c) => ({ valor: c.codigo, rotulo: `${c.codigo} · ${c.descricao}` })), situacao ? "Selecione" : "Escolha o CST");
   if (lista.some((c) => c.codigo === preferida)) campos.cClassTrib.value = preferida;
   else if (lista.length === 1) campos.cClassTrib.value = lista[0].codigo;
+  mostrarDescricaoDaClassificacao();
 }
 
 let pedidoDeSituacoes = 0;
@@ -284,7 +322,7 @@ function linhaDoTributo(prefixo, t) {
 }
 
 function mostrarResultado(r) {
-  $("r-total").textContent = reais(r.total);
+  $("r-total").textContent = r.regimeEspecifico ? "Não apurado" : reais(r.total);
   const carga = Number(r.valorInformado) > 0 ? (Number(r.total) / Number(r.valorInformado)) * 100 : 0;
   $("r-carga").textContent = `Equivale a ${carga.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}% do valor informado (${reais(r.valorInformado)}).`;
   linhaDoTributo("r-cbs", r.cbs);
@@ -293,7 +331,7 @@ function mostrarResultado(r) {
 
   const base = $("r-base");
   base.textContent = reais(r.base);
-  if (r.base !== r.valorInformado && !r.semIncidencia) {
+  if (r.base !== r.valorInformado && !r.semIncidencia && !r.regimeEspecifico) {
     const nota = document.createElement("small");
     nota.textContent = "diferente do valor informado: veja a memória de cálculo";
     base.append(nota);
@@ -301,6 +339,10 @@ function mostrarResultado(r) {
 
   const observacoes = [];
   if (r.semIncidencia) observacoes.push("Nesta classificação não há CBS nem IBS a pagar sobre a operação.");
+  if (campos.data.value < INICIO_ALIQUOTAS && !r.semIncidencia && !r.regimeEspecifico) {
+    observacoes.push("Em 2026, quem cumpre as obrigações acessórias fica dispensado de recolher estes valores (LC 214/2025, art. 348), e as alíquotas de teste não se aplicam a optantes do Simples Nacional.");
+  }
+  if (r.regimeEspecifico) observacoes.push("Esta classificação é tributada em regime ou documento específico, que esta calculadora não apura. Os valores zerados acima não significam que não há tributo: consulte o escritório.");
   if (Number(r.diferido) > 0) observacoes.push(`Tributo diferido (não cobrado nesta operação): ${reais(r.diferido)}.`);
   if (Number(r.devolvido) > 0) observacoes.push(`Tributo devolvido: ${reais(r.devolvido)}.`);
   $("r-observacao").textContent = observacoes.join(" ");
@@ -333,19 +375,20 @@ function limparResultado() {
 
 $("form").addEventListener("submit", async (evento) => {
   evento.preventDefault();
-  if (!listasProntas || botao.disabled) return;
-  const erro = $("erro-form");
-  erro.hidden = true;
-  marcarInvalido(null);
+  if (!listasProntas || botao.disabled || ocupado) return;
+  $("erro-form").hidden = true;
+  limparErrosDosCampos();
   let pedido;
   try {
     pedido = lerFormulario();
   } catch (falha) {
-    mostrarMensagem(erro, falha.message, falha.detalhe);
-    marcarInvalido(falha.campo);
+    limparResultado();
+    mostrarErro(falha.message, falha.detalhe, falha.campo);
     return;
   }
-  botao.disabled = true;
+  // O botão fica focável durante o cálculo (aria-disabled), para o foco do teclado não se perder.
+  ocupado = true;
+  botao.setAttribute("aria-disabled", "true");
   botao.textContent = "Calculando…";
   try {
     mostrarResultado(await api("/api/calcular", pedido));
@@ -354,13 +397,25 @@ $("form").addEventListener("submit", async (evento) => {
     resultado.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   } catch (falha) {
     limparResultado();
-    mostrarMensagem(erro, falha.message, falha.detalhe);
-    marcarInvalido(falha.campo);
+    mostrarErro(falha.message, falha.detalhe, falha.campo);
   } finally {
-    botao.disabled = false;
+    ocupado = false;
+    botao.removeAttribute("aria-disabled");
     botao.textContent = "Calcular";
   }
 });
+
+// Resultado antigo some quando qualquer dado muda, para não ficar ao lado de dados diferentes.
+$("form").addEventListener("input", limparResultadoAposMudanca);
+$("form").addEventListener("change", limparResultadoAposMudanca);
+function limparResultadoAposMudanca() {
+  if (!ocupado && !$("calculo").hidden) {
+    limparResultado();
+    $("vazio").textContent = "Os dados mudaram. Clique em Calcular para ver o novo resultado.";
+  }
+}
+campos.cClassTrib.addEventListener("change", mostrarDescricaoDaClassificacao);
+$("tentar-municipios").addEventListener("click", () => carregarMunicipios());
 
 campos.uf.addEventListener("change", () => {
   guardar("calculadora-uf", campos.uf.value);
@@ -374,7 +429,15 @@ campos.data.addEventListener("change", () => {
   ajustarCredito();
   ajustarAliquotas();
   if (!dataNoPeriodo() || !listasProntas) return;
-  carregarSituacoes().catch((falha) => mostrarMensagem($("erro-form"), falha.message, falha.detalhe));
+  carregarSituacoes().catch((falha) => {
+    // Sem as listas da nova data, as da data anterior não podem ser usadas.
+    preencher(campos.cst, [], "A lista não carregou");
+    preencher(campos.cClassTrib, [], "A lista não carregou");
+    mostrarDescricaoDaClassificacao();
+    $("erro-inicio-texto").textContent = `Não foi possível carregar as classificações desta data. ${falha.message} ${falha.detalhe || ""}`.trim();
+    $("erro-inicio").hidden = false;
+    botao.disabled = true;
+  });
 });
 $("tentar").addEventListener("click", iniciar);
 
