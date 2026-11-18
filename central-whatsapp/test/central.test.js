@@ -463,3 +463,25 @@ test("backup ponta a ponta: central → Apps Script (com o redirecionamento do G
   assert.equal(recusa.ok, false);
   fs.rmSync(pasta, { recursive: true, force: true });
 });
+
+test("triagem: o modelo econômico vai sem desvio automático; os modelos maiores pedem o desvio", async () => {
+  const { criarClassificador } = await import("../src/classificador.js");
+  const { setores } = carregarSetores();
+  const pedidos = [];
+  const cliente = { beta: { messages: { parse: async (p) => {
+    pedidos.push(p);
+    return { stop_reason: "end_turn", parsed_output: { acao: "novo", atendimento_id: null, setor_id: "fiscal", urgencia: "normal", resumo: "r", motivo: "m" } };
+  } } } };
+  const contexto = { chat: { tipo: "grupo", nome: "G", jid: "g" }, novas: [{ direcao: "entrada", autor_nome: "M", texto: "guia do DAS", criado_em: "2026-11-18T10:00:00Z" }], historico: [], abertos: [], setores };
+
+  await criarClassificador({ modelo: "claude-haiku-5-5", setores, cliente })(contexto);
+  await criarClassificador({ modelo: "claude-opus-5-5", setores, cliente })(contexto);
+  assert.equal(pedidos[0].model, "claude-haiku-5-5");
+  assert.equal(pedidos[0].fallbacks, undefined);
+  assert.equal(pedidos[0].betas, undefined);
+  assert.equal(pedidos[1].fallbacks, "default");
+
+  // Recusa da IA vira erro (e a central manda a mensagem para o setor padrão).
+  const recusa = { beta: { messages: { parse: async () => ({ stop_reason: "refusal", parsed_output: null }) } } };
+  await assert.rejects(criarClassificador({ modelo: "claude-haiku-5-5", setores, cliente: recusa })(contexto), /refusal/);
+});

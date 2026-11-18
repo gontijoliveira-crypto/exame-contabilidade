@@ -15,7 +15,7 @@ export const config = {
   raiz,
   porta: Number(env.PORTA || env.PORT || 3000), // PORT é a variável usada pelas hospedagens (Railway, Render, Fly)
   whatsappModo: env.WHATSAPP_MODO || "simulador",
-  claudeModelo: env.CLAUDE_MODELO || "claude-opus-5-5",
+  claudeModelo: env.CLAUDE_MODELO || "claude-haiku-5-5", // econômico; para mais precisão: claude-opus-5-5
   adminEmail: (env.ADMIN_EMAIL || "admin@escritorio.com.br").trim().toLowerCase(),
   // Endereço pelo qual os atendentes abrem o painel; usado nos links enviados por e-mail.
   urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || env.PORT || 3000}`).replace(/\/+$/, ""),

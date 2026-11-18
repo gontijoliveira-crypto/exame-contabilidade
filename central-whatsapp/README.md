@@ -172,8 +172,9 @@ os arquivos ou edite o JSON e reinicie.
   servidor e fazer backup dessa pasta. `dados/` e `.env` nunca devem ir para o repositório.
 - **Acesso ao painel.** Publique sempre atrás de HTTPS (com `NODE_ENV=production` o cookie de sessão
   exige HTTPS) e, de preferência, só na rede do escritório ou por VPN.
-- **Custo da IA.** O modelo padrão é `claude-opus-5-5`. A triagem é uma tarefa simples; se o volume
-  for alto, um modelo menor (`CLAUDE_MODELO=claude-haiku-5-5`) custa bem menos. Vale testar a qualidade.
+- **Custo da IA.** O modelo padrão é o econômico, `claude-haiku-5-5` (por volta de US$ 5 por mês com 30 mil
+  mensagens). Se a triagem errar muito de setor, troque para `CLAUDE_MODELO=claude-opus-5-5`, mais preciso
+  e bem mais caro (por volta de US$ 150 por mês no mesmo volume).
 
 ## O que ainda não faz
 

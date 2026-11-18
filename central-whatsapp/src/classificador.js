@@ -46,14 +46,19 @@ function montarPedido({ chat, novas, historico, abertos }) {
   ].join("\n\n");
 }
 
+// Modelos que aceitam o desvio automático para outro modelo quando a IA recusa um pedido.
+// O modelo econômico (claude-haiku-5-5) não aceita: lá, uma recusa vira erro e a mensagem vai para o setor padrão.
+const MODELOS_COM_DESVIO = new Set(["claude-fable-5-2", "claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
+
 /**
  * Cria a função de triagem. Devolve null quando não há credencial da API configurada;
  * nesse caso a central encaminha tudo para o setor padrão.
  */
-export function criarClassificador({ modelo, setores }) {
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) return null;
+export function criarClassificador({ modelo, setores, cliente = null }) {
+  if (!cliente && !process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) return null;
 
-  const cliente = new Anthropic();
+  cliente ??= new Anthropic();
+  const desvio = MODELOS_COM_DESVIO.has(modelo) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {};
   const sistema = montarSistema(setores);
   const Decisao = z.object({
     acao: z.enum(["novo", "continuar", "ignorar"]),
@@ -68,8 +73,7 @@ export function criarClassificador({ modelo, setores }) {
     const resposta = await cliente.beta.messages.parse({
       model: modelo,
       max_tokens: 4096,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      ...desvio,
       system: [{ type: "text", text: sistema, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: montarPedido(contexto) }],
       output_config: { effort: "low", format: betaZodOutputFormat(Decisao) },
