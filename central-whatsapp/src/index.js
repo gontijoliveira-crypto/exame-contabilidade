@@ -3,6 +3,7 @@ import { Central } from "./central.js";
 import { criarClassificador } from "./classificador.js";
 import { carregarEntrada, carregarMarca, carregarSetores, config } from "./config.js";
 import { criarFonteDeEntrada } from "./entrada.js";
+import { criarArquivos } from "./arquivos.js";
 import { criarBackup } from "./backup.js";
 import { criarEnviadorDeEmail } from "./email.js";
 import { abrirBanco } from "./db.js";
@@ -24,7 +25,19 @@ if (banco.contarAtendentes() === 0) {
 // Primeiro uso: já deixa um número cadastrado, pronto para ler o QR code.
 if (banco.listarCanais({ inativos: true }).length === 0) banco.criarCanal("WhatsApp 1");
 
-const whatsapp = await criarGerenciadorDeCanais({ modo: config.whatsappModo, pastaSessoes: config.pastaSessoesWhatsapp });
+const whatsapp = await criarGerenciadorDeCanais({
+  modo: config.whatsappModo,
+  pastaSessoes: config.pastaSessoesWhatsapp,
+  maxArquivoBytes: config.arquivos.maxArquivoBytes,
+});
+const arquivos = criarArquivos({
+  banco,
+  pastaLocal: config.arquivos.pastaLocal,
+  maxLocalBytes: config.arquivos.maxLocalBytes,
+  url: config.backup.url,
+  segredo: config.backup.segredo,
+});
+arquivos.iniciar();
 
 const classificar = criarClassificador({ modelo: config.claudeModelo, setores });
 if (!classificar) {
@@ -38,6 +51,7 @@ const central = new Central({
   setorPadrao,
   esperaMs: config.esperaTriagemMs,
   assinarRespostas: config.assinarRespostas,
+  arquivos,
 });
 central.setMaxListeners(0); // um ouvinte por painel aberto
 
@@ -73,6 +87,7 @@ const app = criarServidor({
   urlPainel: config.urlPainel,
   entrada,
   backup,
+  arquivos,
   cookieSeguro: process.env.NODE_ENV === "production",
 });
 

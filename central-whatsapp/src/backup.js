@@ -24,13 +24,14 @@ export function planilhaDeMensagens(mensagens) {
     return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const cabecalho = ["Data", "Hora", "Número de WhatsApp", "Grupo ou contato", "Tipo de chat", "Direção", "Autor", "Atendente",
-    "Setor", "Atendimento", "Situação do atendimento", "Tipo", "Mensagem"];
+    "Setor", "Atendimento", "Situação do atendimento", "Tipo", "Mensagem", "Arquivo", "Link do arquivo no Drive"];
   const linhas = mensagens.map((m) => {
     const { dia, hora } = horarioDeBrasilia(new Date(m.criado_em));
     return [
       dia.split("-").reverse().join("/"), hora, m.canal_nome, m.chat_nome || m.chat_jid, m.chat_tipo === "grupo" ? "Grupo" : "Privado",
       m.direcao === "entrada" ? "Recebida" : "Enviada", m.autor_nome || m.autor_jid, m.atendente_nome || "", m.setor_nome || "",
       m.atendimento_id ?? "", ROTULO_STATUS[m.atendimento_status] || "", m.tipo, m.texto,
+      m.arquivo_nome || "", m.arquivo_drive_id ? `https://drive.google.com/file/d/${m.arquivo_drive_id}/view` : "",
     ].map(campo).join(";");
   });
   return "﻿" + [cabecalho.join(";"), ...linhas].join("\r\n") + "\r\n";

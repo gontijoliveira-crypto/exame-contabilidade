@@ -23,7 +23,7 @@ export function criarSimulador() {
       return { waId };
     },
     /** Simula a chegada de uma mensagem de cliente. */
-    simularRecebimento({ chatNome, chatTipo = "grupo", autorNome, texto }) {
+    simularRecebimento({ chatNome, chatTipo = "grupo", autorNome, texto, tipo = "texto", arquivo = null }) {
       const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       aoReceber({
         waId: `sim-${randomUUID()}`,
@@ -33,7 +33,8 @@ export function criarSimulador() {
         autorJid: `${slug(autorNome)}@s.whatsapp.net`,
         autorNome,
         texto,
-        tipo: "texto",
+        tipo,
+        arquivo, // { nome, mime, buffer } para simular foto, documento, vídeo ou áudio
         criadoEm: new Date().toISOString(),
       });
     },

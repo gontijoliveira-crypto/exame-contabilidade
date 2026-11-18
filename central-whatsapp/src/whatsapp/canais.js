@@ -4,11 +4,11 @@ import path from "node:path";
  * Mantém uma conexão de WhatsApp por canal (número). A central fala só com este
  * gerenciador, informando o canal em cada envio.
  */
-export async function criarGerenciadorDeCanais({ modo, pastaSessoes, log = console }) {
+export async function criarGerenciadorDeCanais({ modo, pastaSessoes, maxArquivoBytes, log = console }) {
   let criarConexao;
   if (modo === "baileys") {
     const { criarBaileys } = await import("./baileys.js");
-    criarConexao = (canalId) => criarBaileys({ pastaSessao: path.join(pastaSessoes, `canal-${canalId}`), log });
+    criarConexao = (canalId) => criarBaileys({ pastaSessao: path.join(pastaSessoes, `canal-${canalId}`), maxArquivoBytes, log });
   } else if (modo === "simulador") {
     const { criarSimulador } = await import("./simulador.js");
     criarConexao = () => criarSimulador();

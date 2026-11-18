@@ -361,6 +361,24 @@ function telaAtendimentos() {
   return el("main", { class: `corpo${estado.aberto ? " aberto" : ""}` }, lista, conversa());
 }
 
+/** Foto, áudio, vídeo ou documento de uma mensagem, aberto pelo próprio painel. */
+function anexo(m) {
+  if (!m.arquivo_nome) return null;
+  const tamanho = m.arquivo_tamanho >= 1048576
+    ? `${(m.arquivo_tamanho / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB`
+    : `${Math.max(1, Math.round(m.arquivo_tamanho / 1024))} KB`;
+  if (!m.arquivo_disponivel) return el("span", { class: "anexo indisponivel" }, `${m.arquivo_nome} (arquivo não está mais disponível)`);
+  const url = `/api/arquivos/${m.id}`;
+  const abrir = el("a", { class: "anexo-link", href: url, target: "_blank", rel: "noopener" }, `Abrir ${m.arquivo_nome}`, el("small", {}, ` · ${tamanho}`));
+  if (m.arquivo_mostra && m.arquivo_mime.startsWith("image/")) {
+    return el("span", { class: "anexo" },
+      el("a", { href: url, target: "_blank", rel: "noopener" }, el("img", { src: url, alt: `Imagem enviada por ${m.autor_nome}`, loading: "lazy" })), abrir);
+  }
+  if (m.arquivo_mostra && m.arquivo_mime.startsWith("audio/")) return el("span", { class: "anexo" }, el("audio", { controls: true, preload: "none", src: url }), abrir);
+  if (m.arquivo_mostra && m.arquivo_mime.startsWith("video/")) return el("span", { class: "anexo" }, el("video", { controls: true, preload: "metadata", src: url }), abrir);
+  return el("span", { class: "anexo" }, abrir);
+}
+
 function conversa() {
   if (!estado.aberto) {
     return el("section", { class: "conversa" }, el("p", { class: "vazio" }, "Selecione um atendimento para ver a conversa."));
@@ -386,6 +404,7 @@ function conversa() {
   const caixaMensagens = el("div", { class: "mensagens" }, mensagens.map((m) =>
     el("div", { class: `msg ${m.direcao}` },
       el("span", { class: "autor" }, m.direcao === "saida" ? m.atendente_nome || m.autor_nome : m.autor_nome),
+      anexo(m),
       m.texto,
       el("span", { class: "quando" }, quando(m.criado_em)),
     )));
@@ -562,13 +581,23 @@ function telaWhatsapp() {
     const canal = el("select", { id: "s-canal" }, ativos.map((c) => el("option", { value: c.id }, c.nome)));
     const grupo = el("input", { id: "s-grupo", value: "Padaria Pão Quente x Expo", required: true });
     const autor = el("input", { id: "s-autor", value: "Marcos (Padaria)", required: true });
-    const texto = el("textarea", { id: "s-texto", rows: 3, required: true });
+    const texto = el("textarea", { id: "s-texto", rows: 3 });
+    const arquivo = el("input", { id: "s-arquivo", type: "file" });
+    const lerArquivo = (f) => new Promise((ok, falha) => {
+      const leitor = new FileReader();
+      leitor.onload = () => ok({ nome: f.name, mime: f.type, base64: String(leitor.result).split(",")[1] });
+      leitor.onerror = () => falha(new Error("Não foi possível ler o arquivo."));
+      leitor.readAsDataURL(f);
+    });
     return el("form", {
       class: "cartao",
       onsubmit: async (e) => {
         e.preventDefault();
         try {
-          await api("/simulador/mensagem", { canalId: Number(canal.value), chatNome: grupo.value, autorNome: autor.value, texto: texto.value });
+          const f = arquivo.files[0];
+          if (f && f.size > 8 * 1048576) throw new Error("No simulador, use um arquivo de até 8 MB.");
+          await api("/simulador/mensagem", { canalId: Number(canal.value), chatNome: grupo.value, autorNome: autor.value, texto: texto.value, arquivo: f ? await lerArquivo(f) : null });
+          arquivo.value = "";
           texto.value = "";
           erro.textContent = "Mensagem simulada. Ela aparece em Atendimentos após a triagem.";
         } catch (falha) {
@@ -583,6 +612,7 @@ function telaWhatsapp() {
         el("div", { class: "campo" }, el("label", { for: "s-grupo" }, "Grupo"), grupo),
         el("div", { class: "campo" }, el("label", { for: "s-autor" }, "Quem escreve"), autor)),
       el("div", { class: "campo" }, el("label", { for: "s-texto" }, "Mensagem"), texto),
+      el("div", { class: "campo" }, el("label", { for: "s-arquivo" }, "Arquivo (opcional): foto, PDF, áudio ou vídeo"), arquivo),
       erro,
       el("button", { class: "primario", type: "submit" }, "Simular recebimento"),
     );

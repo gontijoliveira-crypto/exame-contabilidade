@@ -1,6 +1,10 @@
 /**
  * Backup — Central de Atendimento WhatsApp (Expo Contabilidade e Consultoria).
  *
+ * Também guarda os arquivos recebidos pelo WhatsApp (fotos, documentos, vídeos e áudios) em
+ * "Central de Atendimento WhatsApp › Arquivos › <grupo ou contato> › AAAA-MM" e os devolve à central
+ * quando alguém abre um arquivo antigo pelo painel.
+ *
  * Recebe da central, 4 vezes por dia, a planilha de mensagens do dia e a cópia do banco, e grava em
  * "Central de Atendimento WhatsApp › Backups › AAAA › MM" no Google Drive. Cópias do banco mais antigas
  * que o prazo combinado vão para a lixeira; as planilhas ficam para sempre.
@@ -12,17 +16,19 @@
  */
 const PASTA_RAIZ = '1PQnOw5PaiyBD0HqcrxO4w8fmf7vwTEwn'; // pasta "Central de Atendimento WhatsApp"
 const NOME_BACKUPS = 'Backups';
+const NOME_ARQUIVOS = 'Arquivos';
 
 function doPost(e) {
   try {
     const dados = JSON.parse(e.postData.contents);
     const segredo = PropertiesService.getScriptProperties().getProperty('SEGREDO');
     if (!segredo || dados.segredo !== segredo) return resposta_({ ok: false, erro: 'segredo inválido' });
+    if (dados.ler) return resposta_(ler_(String(dados.ler)));
     const lock = LockService.getScriptLock();
     lock.waitLock(30000);
     try {
       const raiz = pastaBackups_();
-      const arquivos = (dados.arquivos || []).map((a) => salvar_(raiz, a));
+      const arquivos = (dados.arquivos || []).map((a) => salvar_(a.raiz === NOME_ARQUIVOS ? pastaArquivos_() : raiz, a));
       const apagados = dados.retencao ? limpar_(raiz, dados.retencao) : 0;
       return resposta_({ ok: true, arquivos, apagados });
     } finally {
@@ -48,6 +54,7 @@ function configurar() {
   }
   const pasta = pastaBackups_();
   Logger.log('Pasta de backups: ' + pasta.getUrl());
+  Logger.log('Pasta de arquivos: ' + pastaArquivos_().getUrl());
   Logger.log('BACKUP_SEGREDO = ' + segredo);
   return segredo;
 }
@@ -60,6 +67,26 @@ function trocarSegredo() {
 
 function pastaBackups_() {
   return subpasta_(DriveApp.getFolderById(PASTA_RAIZ), NOME_BACKUPS);
+}
+
+function pastaArquivos_() {
+  return subpasta_(DriveApp.getFolderById(PASTA_RAIZ), NOME_ARQUIVOS);
+}
+
+/** Devolve um arquivo guardado, desde que esteja dentro da pasta "Arquivos" da central. */
+function ler_(id) {
+  const f = DriveApp.getFileById(id);
+  if (!dentroDe_(f, pastaArquivos_().getId())) return { ok: false, erro: 'arquivo fora da pasta da central' };
+  return { ok: true, nome: f.getName(), mime: f.getMimeType(), base64: Utilities.base64Encode(f.getBlob().getBytes()) };
+}
+
+function dentroDe_(item, pastaId) {
+  const pais = item.getParents();
+  while (pais.hasNext()) {
+    const p = pais.next();
+    if (p.getId() === pastaId || dentroDe_(p, pastaId)) return true;
+  }
+  return false;
 }
 
 function subpasta_(pai, nome) {

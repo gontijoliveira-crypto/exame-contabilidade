@@ -9,7 +9,7 @@ const HISTORICO_PARA_TRIAGEM = 15;
  * Emite "mudou" sempre que algo que o painel mostra foi alterado.
  */
 export class Central extends EventEmitter {
-  constructor({ banco, whatsapp, classificar, setorPadrao, esperaMs = 8000, assinarRespostas = true, log = console }) {
+  constructor({ banco, whatsapp, classificar, setorPadrao, esperaMs = 8000, assinarRespostas = true, arquivos = null, log = console }) {
     super();
     this.banco = banco;
     this.whatsapp = whatsapp;
@@ -17,6 +17,7 @@ export class Central extends EventEmitter {
     this.setorPadrao = setorPadrao;
     this.esperaMs = esperaMs;
     this.assinarRespostas = assinarRespostas;
+    this.arquivos = arquivos; // guarda fotos, documentos, vídeos e áudios (pode ser null)
     this.log = log;
     this.pendentes = new Map(); // chatId -> { ids: number[], timer }
     this.filas = new Map(); // chatId -> Promise (uma triagem por chat de cada vez)
@@ -24,17 +25,28 @@ export class Central extends EventEmitter {
 
   /**
    * Entrada de uma mensagem vinda do WhatsApp.
+   * `arquivo` (opcional): { nome, mime, buffer } de uma foto, documento, vídeo ou áudio.
    * msg: { canalId, waId, chatJid, chatNome, chatTipo, autorJid, autorNome, texto, tipo, criadoEm, enviadaPorNos }
    */
   receberMensagem(msg) {
     const chatId = this.banco.salvarChat({ canalId: msg.canalId, jid: msg.chatJid, tipo: msg.chatTipo, nome: msg.chatNome });
-    msg = { ...msg, chatId };
+    const { arquivo, ...semArquivo } = msg;
+    msg = { ...semArquivo, chatId };
+    const guardarArquivo = (mensagemId) => {
+      if (!mensagemId || !arquivo?.buffer || !this.arquivos) return;
+      try {
+        this.arquivos.guardar({ mensagemId, criadoEm: msg.criadoEm, tipo: msg.tipo, arquivo });
+      } catch (erro) {
+        this.log.error("Não foi possível guardar o arquivo da mensagem", mensagemId, erro.message);
+      }
+    };
 
     // Mensagem enviada pelo próprio número fora do painel (pelo celular do escritório):
     // fica registrada no atendimento mais recente do chat, sem passar pela triagem.
     if (msg.enviadaPorNos) {
       const aberto = this.banco.atendimentosAbertosDoChat(chatId)[0];
       const id = this.banco.inserirMensagem({ ...msg, direcao: "saida", autorNome: "Escritório (celular)", atendimentoId: aberto?.id });
+      guardarArquivo(id);
       if (id && aberto) {
         this.banco.atualizarAtendimento(aberto.id, { pendente: 0 });
         this.emit("mudou", { atendimentoId: aberto.id });
@@ -44,6 +56,7 @@ export class Central extends EventEmitter {
 
     const id = this.banco.inserirMensagem({ ...msg, direcao: "entrada" });
     if (!id) return; // duplicada
+    guardarArquivo(id);
 
     // Junta mensagens seguidas do mesmo chat numa única triagem.
     const p = this.pendentes.get(chatId) || { ids: [], timer: null };

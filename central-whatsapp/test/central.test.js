@@ -485,3 +485,153 @@ test("triagem: o modelo econômico vai sem desvio automático; os modelos maiore
   const recusa = { beta: { messages: { parse: async () => ({ stop_reason: "refusal", parsed_output: null }) } } };
   await assert.rejects(criarClassificador({ modelo: "claude-haiku-5-5", setores, cliente: recusa })(contexto), /refusal/);
 });
+
+/** Apps Script de backup atrás de um servidor HTTP que imita o redirecionamento do Google. */
+async function appsScriptNoAr(t) {
+  const http = await import("node:http");
+  const { carregarAppsScriptDeBackup } = await import("./drive-simulado.js");
+  const drive = carregarAppsScriptDeBackup();
+  const segredo = drive.script.configurar();
+  const respostas = new Map();
+  const servidor = http.createServer((req, res) => {
+    if (req.method === "POST") {
+      let corpo = "";
+      req.on("data", (d) => (corpo += d));
+      req.on("end", () => {
+        const chave = String(respostas.size + 1);
+        respostas.set(chave, drive.script.doPost({ postData: { contents: corpo } }).texto);
+        res.writeHead(302, { Location: `/echo?k=${chave}` }).end();
+      });
+    } else res.writeHead(200, { "Content-Type": "application/json" }).end(respostas.get(new URL(req.url, "http://x").searchParams.get("k")));
+  });
+  await new Promise((r) => servidor.listen(0, r));
+  t.after(() => { servidor.closeAllConnections(); servidor.close(); });
+  return { drive, segredo, url: `http://127.0.0.1:${servidor.address().port}/exec` };
+}
+
+test("arquivos: foto e PDF recebidos ficam guardados, vão para o Drive por cliente e mês, e voltam do Drive quando saem do servidor", async (t) => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { criarArquivos } = await import("../src/arquivos.js");
+  const { horarioDeBrasilia } = await import("../src/backup.js");
+  const { drive, segredo, url } = await appsScriptNoAr(t);
+
+  const c = await montar({ decisoes: [novo("fiscal")] });
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "arquivos-"));
+  t.after(() => fs.rmSync(pasta, { recursive: true, force: true }));
+  // Limite pequeno no servidor: depois de copiados ao Drive, os arquivos saem do servidor.
+  const arquivos = criarArquivos({ banco: c.banco, pastaLocal: pasta, url, segredo, maxLocalBytes: 10, log: silencioso });
+  c.central.arquivos = arquivos;
+
+  const pdf = Buffer.from("%PDF-1.4 nota fiscal 1234");
+  const foto = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  c.whatsapp.simularRecebimento(c.canal1, { chatNome: "Padaria: Pão/Quente", autorNome: "Marcos", texto: "[documento: NF 1234.pdf] segue a nota", tipo: "documento",
+    arquivo: { nome: "NF 1234.pdf", mime: "application/pdf", buffer: pdf } });
+  c.whatsapp.simularRecebimento(c.canal1, { chatNome: "Padaria: Pão/Quente", autorNome: "Marcos", texto: "[imagem]", tipo: "imagem",
+    arquivo: { nome: "", mime: "image/jpeg", buffer: foto } });
+  await c.central.processarTudo();
+
+  const [a] = c.banco.listarAtendimentos({});
+  const msgs = c.banco.mensagensDoAtendimento(a.id);
+  assert.deepEqual(msgs.map((m) => [m.arquivo_nome.replace(/\d{4}-\d{2}-\d{2}-\d{4}/, "DATA"), m.arquivo_mime, m.arquivo_tamanho]),
+    [["NF 1234.pdf", "application/pdf", pdf.length], ["imagem-DATA.jpg", "image/jpeg", foto.length]]);
+  assert.ok(fs.existsSync(path.join(pasta, msgs[0].arquivo_local)), "fica no servidor na chegada");
+
+  await arquivos.enviarPendentes();
+  const { ano, mes } = horarioDeBrasilia();
+  const noDrive = Object.keys(drive.arquivos());
+  assert.equal(noDrive.length, 2, noDrive.join(", "));
+  assert.ok(noDrive.every((n) => n.startsWith(`Arquivos/Padaria- Pão-Quente/${ano}-${mes}/`)), noDrive.join(", "));
+  assert.ok(noDrive.some((n) => n.endsWith(" NF 1234.pdf")));
+
+  // Passou do limite do servidor: os arquivos saem de lá e são lidos do Drive ao abrir.
+  const depois = c.banco.buscarMensagemComArquivo(msgs[0].id);
+  assert.equal(depois.arquivo_local, null);
+  assert.ok(depois.arquivo_drive_id);
+  assert.deepEqual(await arquivos.abrir(depois), pdf);
+
+  // O Apps Script só devolve arquivos da pasta da central.
+  const recusa = JSON.parse(drive.script.doPost({ postData: { contents: JSON.stringify({ segredo, ler: drive.criarArquivoDeFora() }) } }).texto);
+  assert.equal(recusa.ok, false);
+});
+
+test("arquivos: sem o Drive configurado ficam no servidor; se o envio falhar, nada se perde e tenta de novo", async (t) => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { criarArquivos } = await import("../src/arquivos.js");
+  const c = await montar({ decisoes: [novo("fiscal")] });
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "arquivos-"));
+  t.after(() => fs.rmSync(pasta, { recursive: true, force: true }));
+  let falhar = true, envios = 0;
+  const arquivos = criarArquivos({ banco: c.banco, pastaLocal: pasta, url: "https://x/exec", segredo: "s", maxLocalBytes: 1, log: silencioso,
+    enviar: async (u, carga) => { envios++; if (falhar) throw new Error("sem internet"); return { ok: true, arquivos: [{ id: "drive-1" }] }; } });
+  c.central.arquivos = arquivos;
+  const audio = Buffer.from("OggS áudio de teste");
+  c.whatsapp.simularRecebimento(c.canal1, { chatNome: "Grupo", autorNome: "Marcos", texto: "[áudio]", tipo: "audio", arquivo: { nome: "", mime: "audio/ogg; codecs=opus", buffer: audio } });
+  await c.central.processarTudo();
+  await arquivos.enviarPendentes();
+
+  const [m] = c.banco.arquivosPendentesDeDrive(10);
+  assert.equal(m.arquivo_mime, "audio/ogg");
+  assert.match(m.arquivo_nome, /^audio-.*\.ogg$/);
+  assert.deepEqual(await arquivos.abrir(m), audio, "mesmo acima do limite, não sai do servidor antes de estar no Drive");
+
+  falhar = false;
+  await arquivos.enviarPendentes();
+  assert.equal(c.banco.arquivosPendentesDeDrive(10).length, 0);
+  assert.ok(envios >= 2);
+});
+
+test("arquivos no painel: só abre quem pode ver o atendimento; tipos perigosos são sempre baixados, nunca exibidos", async (t) => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { criarArquivos } = await import("../src/arquivos.js");
+  const { criarServidor } = await import("../src/servidor.js");
+  const { criarEnviadorDeEmail } = await import("../src/email.js");
+  const { carregarMarca, config } = await import("../src/config.js");
+
+  const c = await montar({ decisoes: [novo("fiscal")] });
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "arquivos-"));
+  t.after(() => fs.rmSync(pasta, { recursive: true, force: true }));
+  const arquivos = criarArquivos({ banco: c.banco, pastaLocal: pasta, log: silencioso });
+  c.central.arquivos = arquivos;
+  c.atendente("Ana", ["fiscal"]);
+  c.atendente("Bruno", ["pessoal"]);
+  const pdf = Buffer.from("%PDF-1.4 teste");
+  c.whatsapp.simularRecebimento(c.canal1, { chatNome: "Grupo", autorNome: "Marcos", texto: "[documento: nota.pdf]", tipo: "documento", arquivo: { nome: "nota.pdf", mime: "application/pdf", buffer: pdf } });
+  c.whatsapp.simularRecebimento(c.canal1, { chatNome: "Grupo", autorNome: "Marcos", texto: "[documento: pagina.html]", tipo: "documento",
+    arquivo: { nome: "pagina.html", mime: "text/html", buffer: Buffer.from("<script>alert(1)</script>") } });
+  await c.central.processarTudo();
+  const [a] = c.banco.listarAtendimentos({});
+  const [mPdf, mHtml] = c.banco.mensagensDoAtendimento(a.id);
+
+  const app = criarServidor({ banco: c.banco, central: c.central, auth: criarAuth(c.banco), whatsapp: c.whatsapp, raiz: config.raiz, marca: carregarMarca(),
+    email: criarEnviadorDeEmail({ smtp: {}, log: silencioso }), urlPainel: "http://x", arquivos, log: silencioso });
+  const servidor = app.listen(0);
+  t.after(() => { servidor.closeAllConnections(); servidor.close(); });
+  const base = `http://127.0.0.1:${servidor.address().port}`;
+  const entrar = async (email) => {
+    const r = await fetch(`${base}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, senha: "senha-de-teste" }) });
+    return r.headers.get("set-cookie").split(";")[0];
+  };
+  const ana = await entrar("ana@expo.test"), bruno = await entrar("bruno@expo.test");
+
+  assert.equal((await fetch(`${base}/api/arquivos/${mPdf.id}`)).status, 401, "sem login");
+  assert.equal((await fetch(`${base}/api/arquivos/${mPdf.id}`, { headers: { Cookie: bruno } })).status, 403, "outro setor");
+  const ok = await fetch(`${base}/api/arquivos/${mPdf.id}`, { headers: { Cookie: ana } });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers.get("content-type"), "application/pdf");
+  assert.match(ok.headers.get("content-disposition"), /^inline; filename\*=UTF-8''nota\.pdf$/);
+  assert.deepEqual(Buffer.from(await ok.arrayBuffer()), pdf);
+
+  const html = await fetch(`${base}/api/arquivos/${mHtml.id}`, { headers: { Cookie: ana } });
+  assert.equal(html.headers.get("content-type"), "application/octet-stream");
+  assert.match(html.headers.get("content-disposition"), /^attachment/);
+
+  const detalhe = await (await fetch(`${base}/api/atendimentos/${a.id}`, { headers: { Cookie: ana } })).json();
+  assert.equal(detalhe.mensagens[0].arquivo_disponivel, true);
+  assert.equal("arquivo_local" in detalhe.mensagens[0], false, "o caminho no servidor não é exposto");
+});

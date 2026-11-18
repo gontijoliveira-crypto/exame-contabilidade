@@ -19,6 +19,11 @@ export const config = {
   adminEmail: (env.ADMIN_EMAIL || "admin@escritorio.com.br").trim().toLowerCase(),
   // Endereço pelo qual os atendentes abrem o painel; usado nos links enviados por e-mail.
   urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || env.PORT || 3000}`).replace(/\/+$/, ""),
+  arquivos: {
+    pastaLocal: path.join(pastaDados, "arquivos"),
+    maxArquivoBytes: Number(env.ARQUIVOS_MAX_MB || 25) * 1048576, // acima disso, o arquivo não é guardado
+    maxLocalBytes: Number(env.ARQUIVOS_NO_SERVIDOR_MAX_MB || 1024) * 1048576, // o excedente fica só no Drive
+  },
   backup: {
     // Endereço do app da Web do Apps Script de backup (termina em /exec) e o segredo combinado com ele.
     url: env.BACKUP_URL || "",

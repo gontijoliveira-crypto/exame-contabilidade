@@ -113,6 +113,11 @@ export function abrirBanco(arquivo) {
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
   db.exec(ESQUEMA);
   db.exec(`PRAGMA user_version = ${VERSAO_ESQUEMA}`);
+  // Colunas acrescentadas depois da primeira versão (bancos já em uso ganham as colunas sem perder nada).
+  const colunas = new Set(db.prepare("PRAGMA table_info(mensagens)").all().map((c) => c.name));
+  for (const [nome, tipo] of [["arquivo_nome", "TEXT"], ["arquivo_mime", "TEXT"], ["arquivo_tamanho", "INTEGER"], ["arquivo_local", "TEXT"], ["arquivo_drive_id", "TEXT"]]) {
+    if (!colunas.has(nome)) db.exec(`ALTER TABLE mensagens ADD COLUMN ${nome} ${tipo}`);
+  }
 
   const um = (sql, ...p) => db.prepare(sql).get(...p);
   const todos = (sql, ...p) => db.prepare(sql).all(...p);
@@ -280,11 +285,34 @@ export function abrirBanco(arquivo) {
       for (const id of ids) exec("UPDATE mensagens SET atendimento_id = ? WHERE id = ?", atendimentoId, id);
     },
 
+    // ---------- arquivos das mensagens (fotos, documentos, vídeos, áudios) ----------
+    definirArquivo: (id, { nome, mime, tamanho, local }) =>
+      exec("UPDATE mensagens SET arquivo_nome = ?, arquivo_mime = ?, arquivo_tamanho = ?, arquivo_local = ? WHERE id = ?", nome, mime, tamanho, local, id),
+    definirArquivoDrive: (id, driveId) => exec("UPDATE mensagens SET arquivo_drive_id = ? WHERE id = ?", driveId, id),
+    limparArquivoLocal: (id) => exec("UPDATE mensagens SET arquivo_local = NULL WHERE id = ?", id),
+    /** Mensagem com o que é preciso para conferir o acesso ao arquivo e enviá-lo ao Drive. */
+    buscarMensagemComArquivo: (id) =>
+      um(
+        `SELECT m.*, c.nome AS chat_nome, c.jid AS chat_jid, c.canal_id, a.setor_id
+         FROM mensagens m JOIN chats c ON c.id = m.chat_id LEFT JOIN atendimentos a ON a.id = m.atendimento_id
+         WHERE m.id = ? AND m.arquivo_nome IS NOT NULL`,
+        id,
+      ),
+    arquivosPendentesDeDrive: (limite) =>
+      todos(
+        `SELECT m.*, c.nome AS chat_nome, c.jid AS chat_jid FROM mensagens m JOIN chats c ON c.id = m.chat_id
+         WHERE m.arquivo_local IS NOT NULL AND m.arquivo_drive_id IS NULL ORDER BY m.id LIMIT ?`,
+        limite,
+      ),
+    arquivosLocaisNoDrive: () =>
+      todos("SELECT id, arquivo_local, arquivo_tamanho FROM mensagens WHERE arquivo_local IS NOT NULL AND arquivo_drive_id IS NOT NULL ORDER BY id"),
+    tamanhoDosArquivosLocais: () => um("SELECT COALESCE(SUM(arquivo_tamanho), 0) AS n FROM mensagens WHERE arquivo_local IS NOT NULL").n,
+
     // ---------- backup ----------
     /** Mensagens desde uma data, com o número, o chat, o setor e o atendente, para a planilha de backup. */
     mensagensDesde: (desdeIso) =>
       todos(
-        `SELECT m.id, m.criado_em, m.direcao, m.autor_nome, m.autor_jid, m.tipo, m.texto, m.atendimento_id,
+        `SELECT m.id, m.criado_em, m.direcao, m.autor_nome, m.autor_jid, m.tipo, m.texto, m.atendimento_id, m.arquivo_nome, m.arquivo_drive_id,
            c.nome AS chat_nome, c.tipo AS chat_tipo, c.jid AS chat_jid, n.nome AS canal_nome,
            t.nome AS atendente_nome, s.nome AS setor_nome, a.status AS atendimento_status
          FROM mensagens m

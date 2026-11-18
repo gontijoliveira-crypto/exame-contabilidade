@@ -2,6 +2,7 @@ import path from "node:path";
 import express from "express";
 import { COOKIE, VALIDADE_REDEFINICAO_MIN, criarLimitador, gerarHash, lerCookie, normalizarEmail } from "./auth.js";
 import { mensagemDeRedefinicao } from "./email.js";
+import { podeMostrar } from "./arquivos.js";
 
 const publico = ({ senha_hash, ...resto }) => resto;
 
@@ -32,18 +33,20 @@ function validarSenha(senha) {
   return senha;
 }
 
-export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, entrada = null, backup = null, cookieSeguro = false, log = console }) {
+export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, entrada = null, backup = null, arquivos = null, cookieSeguro = false, log = console }) {
   const app = express();
   app.disable("x-powered-by");
   // Atrás de um proxy reverso (Nginx, Caddy), use TRUST_PROXY=1 para req.ip ser o IP real do usuário.
   if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+  // O simulador aceita um arquivo de teste junto da mensagem; as demais rotas só recebem textos curtos.
+  app.use("/api/simulador", express.json({ limit: "12mb" }));
   app.use(express.json({ limit: "100kb" }));
   app.use((req, res, next) => {
     res.set({
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "no-referrer",
-      "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com",
+      "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com",
     });
     next();
   });
@@ -172,7 +175,35 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, ema
 
   app.get("/api/atendimentos/:id", (req, res) => {
     const atendimento = atendimentoDaRota(req);
-    res.json({ atendimento, mensagens: banco.mensagensDoAtendimento(atendimento.id) });
+    const mensagens = banco.mensagensDoAtendimento(atendimento.id).map(({ arquivo_local, arquivo_drive_id, ...m }) => ({
+      ...m,
+      arquivo_disponivel: Boolean(m.arquivo_nome && (arquivo_local || arquivo_drive_id)),
+      arquivo_mostra: Boolean(m.arquivo_nome) && podeMostrar(m.arquivo_mime),
+    }));
+    res.json({ atendimento, mensagens });
+  });
+
+  // Arquivo de uma mensagem (foto, documento, vídeo, áudio). Mesma regra de acesso do atendimento;
+  // arquivos de mensagens sem atendimento (ignoradas pela triagem) só o administrador abre.
+  app.get("/api/arquivos/:id", async (req, res) => {
+    const m = banco.buscarMensagemComArquivo(Number(req.params.id));
+    if (!m) throw new ErroHttp(404, "Arquivo não encontrado.");
+    const liberado = req.atendente.admin || (m.setor_id && podeVer(req.atendente, m));
+    if (!liberado) throw new ErroHttp(403, "Você não tem acesso a este arquivo.");
+    let conteudo;
+    try {
+      conteudo = await arquivos?.abrir(m);
+    } catch (erro) {
+      throw new ErroHttp(502, `Não foi possível buscar o arquivo no Google Drive: ${erro.message}`);
+    }
+    if (!conteudo) throw new ErroHttp(404, "Este arquivo não está mais disponível.");
+    const nome = encodeURIComponent(m.arquivo_nome);
+    res.set({
+      "Content-Type": podeMostrar(m.arquivo_mime) ? m.arquivo_mime : "application/octet-stream",
+      "Content-Disposition": `${podeMostrar(m.arquivo_mime) ? "inline" : "attachment"}; filename*=UTF-8''${nome}`,
+      "Cache-Control": "private, max-age=3600",
+    });
+    res.send(conteudo);
   });
 
   app.post("/api/atendimentos/:id/responder", async (req, res) => {
@@ -330,12 +361,20 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, ema
   // ---------- simulador (só existe no modo de testes) ----------
   if (whatsapp.modo === "simulador") {
     app.post("/api/simulador/mensagem", exigirAdmin, (req, res) => {
-      const { canalId, chatNome, chatTipo, autorNome, texto } = req.body || {};
+      const { canalId, chatNome, chatTipo, autorNome, texto, arquivo } = req.body || {};
+      const anexo = arquivo && typeof arquivo.base64 === "string" && typeof arquivo.nome === "string"
+        ? { nome: arquivo.nome, mime: String(arquivo.mime || ""), buffer: Buffer.from(arquivo.base64, "base64") }
+        : null;
+      const tipoAnexo = !anexo ? "texto" : anexo.mime.startsWith("image/") ? "imagem" : anexo.mime.startsWith("audio/") ? "audio" : anexo.mime.startsWith("video/") ? "video" : "documento";
       if (!banco.buscarCanal(Number(canalId))?.ativo) throw new ErroHttp(400, "Escolha um número ativo.");
-      if (![chatNome, autorNome, texto].every((v) => typeof v === "string" && v.trim())) {
-        throw new ErroHttp(400, "Preencha grupo, autor e mensagem.");
+      if (![chatNome, autorNome].every((v) => typeof v === "string" && v.trim()) || typeof texto !== "string" || (!texto.trim() && !anexo)) {
+        throw new ErroHttp(400, "Preencha grupo, autor e a mensagem (ou anexe um arquivo).");
       }
-      whatsapp.simularRecebimento(Number(canalId), { chatNome: chatNome.trim(), chatTipo: chatTipo === "privado" ? "privado" : "grupo", autorNome: autorNome.trim(), texto: texto.trim() });
+      const rotulo = { imagem: "[imagem]", audio: "[áudio]", video: "[vídeo]", documento: `[documento: ${anexo?.nome}]` }[tipoAnexo];
+      whatsapp.simularRecebimento(Number(canalId), {
+        chatNome: chatNome.trim(), chatTipo: chatTipo === "privado" ? "privado" : "grupo", autorNome: autorNome.trim(),
+        texto: [rotulo, texto.trim()].filter(Boolean).join(" "), tipo: tipoAnexo, arquivo: anexo,
+      });
       res.json({ ok: true });
     });
   }

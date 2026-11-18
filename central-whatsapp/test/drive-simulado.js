@@ -11,10 +11,13 @@ export function carregarAppsScriptDeBackup({ pastaRaizId = "1PQnOw5PaiyBD0HqcrxO
   const iterador = (lista) => { let i = 0; return { hasNext: () => i < lista.length, next: () => lista[i++] }; };
   const filhos = (paiId, pasta) => [...itens.values()].filter((x) => x.pai === paiId && x.pasta === pasta && !x.lixeira);
   const arquivo = (x) => ({
+    getParents: () => iterador(x.pai ? [pasta(itens.get(x.pai))] : []),
+    getMimeType: () => x.mime, getBlob: () => ({ getBytes: () => [...x.conteudo] }),
     getId: () => x.id, getName: () => x.nome, getUrl: () => `https://drive.google.com/file/d/${x.id}/view`,
     getDateCreated: () => new Date(x.criado), setTrashed: (v) => { x.lixeira = v; },
   });
   const pasta = (x) => ({
+    getParents: () => iterador(x.pai ? [pasta(itens.get(x.pai))] : []),
     getId: () => x.id, getName: () => x.nome, getUrl: () => `https://drive.google.com/drive/folders/${x.id}`,
     getFoldersByName: (n) => iterador(filhos(x.id, true).filter((f) => f.nome === n).map(pasta)),
     getFilesByName: (n) => iterador(filhos(x.id, false).filter((f) => f.nome === n).map(arquivo)),
@@ -25,12 +28,16 @@ export function carregarAppsScriptDeBackup({ pastaRaizId = "1PQnOw5PaiyBD0HqcrxO
   });
   const props = new Map();
   const contexto = {
-    DriveApp: { getFolderById: (id) => { const x = itens.get(id); if (!x) throw new Error("pasta não encontrada"); return pasta(x); } },
+    DriveApp: {
+      getFolderById: (id) => { const x = itens.get(id); if (!x) throw new Error("pasta não encontrada"); return pasta(x); },
+      getFileById: (id) => { const x = itens.get(id); if (!x || x.pasta) throw new Error("arquivo não encontrado"); return arquivo(x); },
+    },
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, v), deleteProperty: (k) => props.delete(k) }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     Utilities: {
       getUuid: () => crypto.randomUUID(),
       base64Decode: (b64) => [...Buffer.from(b64, "base64")],
+      base64Encode: (bytes) => Buffer.from(bytes).toString("base64"),
       newBlob: (bytes, mime, nome) => ({ bytes: Buffer.from(bytes), mime, nome }),
     },
     ContentService: { MimeType: { JSON: "json" }, createTextOutput: (t) => ({ texto: t, setMimeType() { return this; } }) },
@@ -43,6 +50,8 @@ export function carregarAppsScriptDeBackup({ pastaRaizId = "1PQnOw5PaiyBD0HqcrxO
     script: contexto,
     /** Arquivos que não estão na lixeira: { "Backups/2026/11/mensagens-...csv": item } */
     arquivos: () => Object.fromEntries([...itens.values()].filter((x) => !x.pasta && !x.lixeira).map((x) => [caminho(x), x])),
+    /** Cria um arquivo solto, fora das pastas da central (para testar a recusa de leitura). */
+    criarArquivoDeFora: () => novo({ nome: "contrato-particular.pdf", pasta: false, pai: null, conteudo: Buffer.from("x"), mime: "application/pdf" }).id,
     /** Faz os arquivos já criados parecerem `dias` mais antigos. */
     envelhecer: (dias) => { for (const x of itens.values()) x.criado -= dias * 864e5; },
     naLixeira: () => [...itens.values()].filter((x) => x.lixeira).map(caminho),

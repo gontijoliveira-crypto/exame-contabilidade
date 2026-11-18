@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import makeWASocket, {
   Browsers,
+  downloadMediaMessage,
   DisconnectReason,
   fetchLatestBaileysVersion,
   normalizeMessageContent,
@@ -17,12 +18,18 @@ export function extrairConteudo(mensagem) {
 
   if (c.conversation) return { tipo: "texto", texto: c.conversation };
   if (c.extendedTextMessage?.text) return { tipo: "texto", texto: c.extendedTextMessage.text };
-  if (c.imageMessage) return { tipo: "imagem", texto: comLegenda("[imagem]", c.imageMessage.caption) };
-  if (c.videoMessage) return { tipo: "video", texto: comLegenda("[vídeo]", c.videoMessage.caption) };
+  // `midia` descreve o arquivo a baixar: { mime, nome (só documentos têm), tamanho em bytes }.
+  const midia = (m) => ({ mime: m.mimetype || "", nome: m.fileName || "", tamanho: Number(m.fileLength || 0) });
+  if (c.imageMessage) return { tipo: "imagem", texto: comLegenda("[imagem]", c.imageMessage.caption), midia: midia(c.imageMessage) };
+  if (c.videoMessage) return { tipo: "video", texto: comLegenda("[vídeo]", c.videoMessage.caption), midia: midia(c.videoMessage) };
   if (c.documentMessage) {
-    return { tipo: "documento", texto: comLegenda(`[documento: ${c.documentMessage.fileName || "sem nome"}]`, c.documentMessage.caption) };
+    return {
+      tipo: "documento",
+      texto: comLegenda(`[documento: ${c.documentMessage.fileName || "sem nome"}]`, c.documentMessage.caption),
+      midia: midia(c.documentMessage),
+    };
   }
-  if (c.audioMessage) return { tipo: "audio", texto: "[áudio]" };
+  if (c.audioMessage) return { tipo: "audio", texto: "[áudio]", midia: midia(c.audioMessage) };
   if (c.stickerMessage) return { tipo: "figurinha", texto: "[figurinha]" };
   if (c.locationMessage) return { tipo: "localizacao", texto: "[localização]" };
   if (c.contactMessage) return { tipo: "contato", texto: `[contato: ${c.contactMessage.displayName || ""}]` };
@@ -33,7 +40,7 @@ export function extrairConteudo(mensagem) {
  * Adaptador do WhatsApp real, via Baileys (protocolo do WhatsApp Web).
  * O número é pareado lendo o QR code com o celular, como no WhatsApp Web.
  */
-export function criarBaileys({ pastaSessao, log = console }) {
+export function criarBaileys({ pastaSessao, maxArquivoBytes = 25 * 1048576, log = console }) {
   let sock = null;
   let aoReceber = () => {};
   let aoMudar = () => {};
@@ -67,6 +74,20 @@ export function criarBaileys({ pastaSessao, log = console }) {
     const conteudo = extrairConteudo(m.message);
     if (!conteudo) return;
 
+    // Baixa a foto, documento, vídeo ou áudio na chegada (o WhatsApp não guarda os arquivos para sempre).
+    let arquivo = null;
+    if (conteudo.midia && conteudo.midia.tamanho <= maxArquivoBytes) {
+      try {
+        const buffer = await downloadMediaMessage(m, "buffer", {}, { logger: pino({ level: "silent" }), reuploadRequest: sock.updateMediaMessage });
+        if (buffer.length <= maxArquivoBytes) arquivo = { nome: conteudo.midia.nome, mime: conteudo.midia.mime, buffer };
+      } catch (erro) {
+        log.error("Não foi possível baixar o arquivo de uma mensagem:", erro.message);
+      }
+    }
+    const semArquivo = conteudo.midia && !arquivo
+      ? conteudo.midia.tamanho > maxArquivoBytes ? " (arquivo não guardado: maior que o limite)" : " (arquivo não guardado: falha ao baixar)"
+      : "";
+
     const grupo = jid.endsWith("@g.us");
     const autorJid = grupo ? m.key.participantAlt || m.key.participant || "" : m.key.remoteJidAlt || jid;
     aoReceber({
@@ -76,8 +97,9 @@ export function criarBaileys({ pastaSessao, log = console }) {
       chatTipo: grupo ? "grupo" : "privado",
       autorJid,
       autorNome: m.pushName || autorJid.split("@")[0],
-      texto: conteudo.texto,
+      texto: conteudo.texto + semArquivo,
       tipo: conteudo.tipo,
+      arquivo,
       criadoEm: new Date(Number(m.messageTimestamp || Date.now() / 1000) * 1000).toISOString(),
       enviadaPorNos: !!m.key.fromMe,
     });

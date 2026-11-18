@@ -129,6 +129,23 @@ quando ele mudar). Os dados vêm do `indicadores.json` que a Central atualiza to
 (endereço em `config/entrada.json`; o arquivo precisa estar compartilhado como "qualquer pessoa com o
 link: leitor"). A central guarda a última versão em `dados/` e, sem indicadores, mostra o cartão simples.
 
+## Fotos, documentos, vídeos e áudios
+
+Cada arquivo recebido é baixado na chegada (até `ARQUIVOS_MAX_MB`, padrão 25 MB) e fica acessível no
+próprio painel: fotos em miniatura, áudios e vídeos com tocador, e os demais com o link "Abrir". Vale a
+mesma regra de acesso do atendimento (número e setor). Tipos que poderiam executar algo no navegador
+(HTML, SVG etc.) nunca são exibidos, só baixados.
+
+- **No servidor:** `dados/arquivos/AAAA-MM/`, até `ARQUIVOS_NO_SERVIDOR_MAX_MB` (1 GB).
+- **No Google Drive (guarda definitiva):** "Central de Atendimento WhatsApp › Arquivos › <grupo ou
+  contato> › AAAA-MM", pelo mesmo Apps Script do backup (`BACKUP_URL` e `BACKUP_SEGREDO`). Quando o
+  servidor passa do limite, os arquivos mais antigos que já estão no Drive saem do servidor e, ao serem
+  abertos no painel, são buscados no Drive. Um arquivo nunca sai do servidor antes de estar no Drive.
+- A planilha diária do backup traz o nome e o link do Drive de cada arquivo.
+
+Arquivos maiores que o limite ficam só com o aviso na conversa. O painel ainda envia apenas texto, e os
+áudios não são transcritos.
+
 ## Backup no Google Drive
 
 Às 00:00, 06:00, 12:00 e 18:00 (Brasília; `BACKUP_HORARIOS`), a central envia ao Google Drive, pasta
@@ -178,8 +195,7 @@ os arquivos ou edite o JSON e reinicie.
 
 ## O que ainda não faz
 
-- Mídia: áudios, imagens e documentos aparecem como marcadores (`[áudio]`, `[documento: nota.pdf]`);
-  o arquivo em si não é baixado nem transcrito, e o painel só envia texto.
+- Enviar arquivos pelo painel (hoje só texto) e transcrever áudios.
 - Avisar o atendente fora do painel (por exemplo, no WhatsApp pessoal) quando chega algo novo.
 - Horário de atendimento, mensagens automáticas, relatórios e tempo médio de resposta.
 - Edição de setores pelo painel (hoje é pelo arquivo de configuração).
