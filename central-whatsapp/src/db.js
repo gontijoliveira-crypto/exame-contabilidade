@@ -37,6 +37,11 @@ CREATE TABLE IF NOT EXISTS sessoes (
   atendente_id INTEGER NOT NULL REFERENCES atendentes(id),
   expira_em TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS redefinicoes_senha (
+  token_hash TEXT PRIMARY KEY,   -- só o hash do link fica guardado
+  atendente_id INTEGER NOT NULL REFERENCES atendentes(id),
+  expira_em TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS chats (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   canal_id INTEGER NOT NULL REFERENCES canais(id),
@@ -212,6 +217,19 @@ export function abrirBanco(arquivo) {
       return um("SELECT * FROM sessoes WHERE token = ?", token);
     },
     apagarSessao: (token) => exec("DELETE FROM sessoes WHERE token = ?", token),
+    apagarSessoesDoAtendente: (id) => exec("DELETE FROM sessoes WHERE atendente_id = ?", id),
+
+    // ---------- redefinição de senha ----------
+    /** Guarda um novo link de redefinição, invalidando os anteriores do mesmo atendente. */
+    criarRedefinicao(tokenHash, atendenteId, expiraEm) {
+      exec("DELETE FROM redefinicoes_senha WHERE atendente_id = ?", atendenteId);
+      exec("INSERT INTO redefinicoes_senha (token_hash, atendente_id, expira_em) VALUES (?, ?, ?)", tokenHash, atendenteId, expiraEm);
+    },
+    buscarRedefinicao(tokenHash, agoraIso) {
+      exec("DELETE FROM redefinicoes_senha WHERE expira_em < ?", agoraIso);
+      return um("SELECT * FROM redefinicoes_senha WHERE token_hash = ?", tokenHash);
+    },
+    apagarRedefinicoes: (atendenteId) => exec("DELETE FROM redefinicoes_senha WHERE atendente_id = ?", atendenteId),
 
     // ---------- chats e mensagens ----------
     /** Cria ou atualiza o chat daquele número e devolve o id. */

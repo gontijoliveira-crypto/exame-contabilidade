@@ -16,7 +16,16 @@ export const config = {
   porta: Number(env.PORTA || 3000),
   whatsappModo: env.WHATSAPP_MODO || "simulador",
   claudeModelo: env.CLAUDE_MODELO || "claude-opus-5-5",
-  adminEmail: (env.ADMIN_EMAIL || "admin@examecontabilidade.com.br").trim().toLowerCase(),
+  adminEmail: (env.ADMIN_EMAIL || "admin@escritorio.com.br").trim().toLowerCase(),
+  // Endereço pelo qual os atendentes abrem o painel; usado nos links enviados por e-mail.
+  urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || 3000}`).replace(/\/+$/, ""),
+  smtp: {
+    host: env.SMTP_HOST || "",
+    porta: Number(env.SMTP_PORTA || 587),
+    usuario: env.SMTP_USUARIO || "",
+    senha: env.SMTP_SENHA || "",
+    remetente: env.SMTP_REMETENTE || env.SMTP_USUARIO || "",
+  },
   adminSenha: env.ADMIN_SENHA || "",
   esperaTriagemMs: Number(env.ESPERA_TRIAGEM_SEGUNDOS ?? 8) * 1000,
   assinarRespostas: (env.ASSINAR_RESPOSTAS || "true") !== "false",
@@ -24,6 +33,22 @@ export const config = {
   arquivoBanco: path.join(pastaDados, "central.db"),
   pastaSessoesWhatsapp: path.join(pastaDados, "sessoes-whatsapp"),
 };
+
+const COR = /^#[0-9a-fA-F]{6}$/;
+
+/** Identidade visual do escritório (nome, logo e cores), em config/marca.json. */
+export function carregarMarca() {
+  const marca = JSON.parse(fs.readFileSync(path.join(raiz, "config", "marca.json"), "utf8"));
+  for (const [chave, valor] of Object.entries(marca.cores || {})) {
+    if (!COR.test(valor)) throw new Error(`config/marca.json: cor "${chave}" deve estar no formato #RRGGBB`);
+  }
+  for (const campo of ["logo", "icone"]) {
+    if (marca[campo] && !fs.existsSync(path.join(raiz, "public", marca[campo]))) {
+      throw new Error(`config/marca.json: arquivo "${campo}" não encontrado em public/${marca[campo]}`);
+    }
+  }
+  return marca;
+}
 
 export function carregarSetores() {
   const arquivo = path.join(raiz, "config", "setores.json");

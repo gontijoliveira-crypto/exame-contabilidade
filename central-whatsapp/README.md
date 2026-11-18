@@ -1,4 +1,4 @@
-# Central de Atendimento via WhatsApp
+# Central de Atendimento via WhatsApp · Expo Contabilidade
 
 Um único número de WhatsApp do escritório, vários atendentes. O número participa dos grupos com os
 clientes (e de conversas privadas); cada mensagem recebida é lida por uma IA, que identifica o assunto
@@ -43,7 +43,30 @@ Para ajustar o encaminhamento, edite as descrições e reinicie.
 4. Ele só vê um atendimento quando tem acesso **ao número** por onde a mensagem chegou **e ao setor**
    para onde a IA a encaminhou. O administrador vê tudo.
 5. Sessão de 12 horas; 5 senhas erradas bloqueiam o e-mail por 15 minutos. Desativar um atendente
-   encerra as sessões dele na hora. Troca de senha é feita pelo administrador.
+   encerra as sessões dele na hora.
+
+### Esqueci minha senha
+
+1. Na tela de entrada, o atendente clica em **Esqueci minha senha** e informa o e-mail.
+2. A central envia um e-mail com o link **Criar nova senha**. O link vale por **1 hora**, só pode ser
+   usado **uma vez**, e um pedido novo cancela o anterior.
+3. Ao abrir o link, ele escolhe a nova senha (digitada duas vezes). Todas as sessões abertas daquele
+   atendente são encerradas e ele entra de novo com a senha nova.
+
+Para não revelar quais e-mails estão cadastrados, a resposta é sempre a mesma, exista ou não o e-mail.
+Há limite de 3 pedidos por e-mail e 10 por computador a cada hora. O administrador continua podendo
+definir uma senha diretamente na tela do atendente.
+
+Para os e-mails saírem de verdade, preencha no `.env`:
+
+| Variável | Exemplo |
+|---|---|
+| `URL_PAINEL` | `https://central.expocontabilidade.com.br` (endereço que os atendentes usam; vai no link) |
+| `SMTP_HOST` / `SMTP_PORTA` | Google Workspace: `smtp.gmail.com` / `587`. Microsoft 365: `smtp.office365.com` / `587` |
+| `SMTP_USUARIO` / `SMTP_SENHA` | Conta que envia. No Google, use uma **senha de app**, não a senha normal |
+| `SMTP_REMETENTE` | `"Central de Atendimento <nao-responda@expocontabilidade.com.br>"` |
+
+Sem `SMTP_HOST`, o e-mail não é enviado: o texto com o link aparece no terminal (útil só em testes).
 
 ## Vários números de WhatsApp
 
@@ -97,6 +120,13 @@ precisa ser refeito.
 
 `npm test` roda os testes automatizados (usam o simulador e uma IA de mentira; não gastam créditos).
 
+## Identidade visual
+
+Nome, logo e cores ficam em [`config/marca.json`](config/marca.json); a logo e o ícone ficam em
+`public/marca/`. A configuração atual usa a logo da Expo (versão em degradê dourado) e as cores da
+assinatura de e-mail do escritório: azul-marinho `#011433` e dourado `#D9911C`. Para trocar, substitua
+os arquivos ou edite o JSON e reinicie.
+
 ## Pontos de atenção antes de usar com clientes
 
 - **Conexão não oficial.** Para o número poder ser adicionado a grupos comuns de clientes, a conexão
@@ -116,7 +146,6 @@ precisa ser refeito.
 
 - Mídia: áudios, imagens e documentos aparecem como marcadores (`[áudio]`, `[documento: nota.pdf]`);
   o arquivo em si não é baixado nem transcrito, e o painel só envia texto.
-- "Esqueci minha senha" por e-mail (hoje quem redefine é o administrador).
 - Avisar o atendente fora do painel (por exemplo, no WhatsApp pessoal) quando chega algo novo.
 - Horário de atendimento, mensagens automáticas, relatórios e tempo médio de resposta.
 - Edição de setores pelo painel (hoje é pelo arquivo de configuração).

@@ -10,6 +10,9 @@ const estado = {
   abertoId: null,
   aberto: null, // { atendimento, mensagens }
   rascunhos: new Map(), // atendimentoId -> texto digitado
+  acesso: "entrar", // tela sem login: entrar | esqueci | redefinir
+  tokenRedefinicao: null,
+  avisoAcesso: "", // mensagem mostrada na tela de entrada (ex.: senha alterada)
   atendentes: [],
   canais: [], // números de WhatsApp, com estado e QR code (só administrador)
 };
@@ -28,16 +31,14 @@ function el(tag, props = {}, ...filhos) {
   return no;
 }
 
-// Marca da Exame: a palavra "exame" com o símbolo no lugar do "x" (mesmo desenho do site).
-const SIMBOLO =
-  '<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#0B2A6F"/>' +
-  '<path d="M15 15 L41 41" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>' +
-  '<path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// Marca do escritório (config/marca.json): logo em imagem, ou o nome em texto enquanto não houver logo.
+let marca = { nome: "", subtitulo: "", logo: null };
 
 function logo(classe) {
-  const palavra = el("span", { class: "palavra", role: "img", "aria-label": "Exame" });
-  palavra.innerHTML = `e${SIMBOLO}ame`; // conteúdo fixo, sem dados de terceiros
-  return el("span", { class: `logo ${classe}` }, palavra, el("span", { class: "sub" }, "Contabilidade e Consultoria"));
+  const conteudo = marca.logo
+    ? el("img", { class: "imagem", src: marca.logo, alt: marca.nome })
+    : el("span", { class: "palavra" }, marca.nome);
+  return el("span", { class: `logo ${classe}` }, conteudo, marca.subtitulo && el("span", { class: "sub" }, marca.subtitulo));
 }
 
 async function api(caminho, corpo, metodo) {
@@ -99,7 +100,24 @@ async function atualizar() {
   desenhar();
 }
 
+/**
+ * Link do e-mail de redefinição: /#redefinir=<token>. Mostra a tela de nova senha e tira o token
+ * da barra de endereço. Devolve true se havia um link.
+ */
+function abrirLinkDeRedefinicao() {
+  const pedido = location.hash.match(/^#redefinir=([\w-]+)$/);
+  if (!pedido) return false;
+  estado.tokenRedefinicao = pedido[1];
+  estado.eu = null; // a troca de senha encerra as sessões abertas
+  history.replaceState(null, "", location.pathname);
+  irPara("redefinir");
+  return true;
+}
+// Link aberto numa aba que já estava no painel (só o trecho depois do # muda).
+window.addEventListener("hashchange", abrirLinkDeRedefinicao);
+
 async function iniciar() {
+  if (abrirLinkDeRedefinicao()) return;
   try {
     estado.eu = await api("/eu");
   } catch {
@@ -128,19 +146,31 @@ async function acao(caminho, corpo = {}) {
 }
 
 // ---------- telas ----------
+/** Moldura das telas sem login: logo em destaque e um cartão com o formulário. */
+function telaDeAcesso(titulo, ...conteudo) {
+  return el("div", { class: "login" }, logo("grande"), el("div", { class: "cartao-acesso" }, el("h1", {}, titulo), ...conteudo));
+}
+
+function irPara(acesso, aviso = "") {
+  estado.acesso = acesso;
+  estado.avisoAcesso = aviso;
+  desenhar();
+}
+
 function telaLogin() {
   const erro = el("div", { class: "erro", role: "alert" });
   const email = el("input", { id: "email", type: "email", autocomplete: "username", required: true });
   const senha = el("input", { id: "senha", type: "password", autocomplete: "current-password", required: true });
   const botao = el("button", { class: "primario", type: "submit" }, "Entrar");
-  return el("div", { class: "login" },
-    logo("grande"),
+  return telaDeAcesso("Central de Atendimento",
+    estado.avisoAcesso && el("p", { class: "aviso-ok", role: "status" }, estado.avisoAcesso),
     el("form", {
       onsubmit: async (e) => {
         e.preventDefault();
         botao.disabled = true;
         try {
           await api("/login", { email: email.value, senha: senha.value });
+          estado.avisoAcesso = "";
           await iniciar();
         } catch (falha) {
           erro.textContent = falha.message;
@@ -148,12 +178,70 @@ function telaLogin() {
         }
       },
     },
-      el("h1", {}, "Central de Atendimento"),
       el("div", { class: "campo" }, el("label", { for: "email" }, "E-mail"), email),
       el("div", { class: "campo" }, el("label", { for: "senha" }, "Senha"), senha),
       erro,
       botao,
     ),
+    el("button", { class: "link", type: "button", onclick: () => irPara("esqueci") }, "Esqueci minha senha"),
+  );
+}
+
+function telaEsqueci() {
+  const erro = el("div", { class: "erro", role: "alert" });
+  const email = el("input", { id: "email", type: "email", autocomplete: "username", required: true });
+  const botao = el("button", { class: "primario", type: "submit" }, "Enviar link");
+  const voltar = el("button", { class: "link", type: "button", onclick: () => irPara("entrar") }, "Voltar para a entrada");
+  const formulario = el("form", {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      botao.disabled = true;
+      try {
+        await api("/senha/esqueci", { email: email.value });
+        formulario.replaceWith(el("p", { class: "aviso-ok", role: "status" },
+          `Se ${email.value.trim()} estiver cadastrado, você vai receber em instantes um e-mail com o link para criar uma nova senha. ` +
+          "O link vale por 1 hora. Confira também a caixa de spam."));
+      } catch (falha) {
+        erro.textContent = falha.message;
+        botao.disabled = false;
+      }
+    },
+  },
+    el("p", { class: "dica" }, "Informe o e-mail que você usa para entrar. Vamos enviar um link para você criar uma nova senha."),
+    el("div", { class: "campo" }, el("label", { for: "email" }, "E-mail"), email),
+    erro,
+    botao,
+  );
+  return telaDeAcesso("Esqueci minha senha", formulario, voltar);
+}
+
+function telaRedefinir() {
+  const erro = el("div", { class: "erro", role: "alert" });
+  const senha = el("input", { id: "nova-senha", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
+  const repetir = el("input", { id: "repetir-senha", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
+  const botao = el("button", { class: "primario", type: "submit" }, "Salvar nova senha");
+  return telaDeAcesso("Criar nova senha",
+    el("form", {
+      onsubmit: async (e) => {
+        e.preventDefault();
+        if (senha.value !== repetir.value) return (erro.textContent = "As duas senhas não são iguais.");
+        botao.disabled = true;
+        try {
+          await api("/senha/redefinir", { token: estado.tokenRedefinicao, senha: senha.value });
+          estado.tokenRedefinicao = null;
+          irPara("entrar", "Senha alterada. Entre com a nova senha.");
+        } catch (falha) {
+          erro.textContent = falha.message;
+          botao.disabled = false;
+        }
+      },
+    },
+      el("div", { class: "campo" }, el("label", { for: "nova-senha" }, "Nova senha (mínimo de 8 caracteres)"), senha),
+      el("div", { class: "campo" }, el("label", { for: "repetir-senha" }, "Repita a nova senha"), repetir),
+      erro,
+      botao,
+    ),
+    el("button", { class: "link", type: "button", onclick: () => irPara("esqueci") }, "Pedir um novo link"),
   );
 }
 
@@ -411,7 +499,7 @@ function telaWhatsapp() {
     const ativos = estado.canais.filter((c) => c.ativo);
     const erro = el("div", { class: "erro", role: "alert" });
     const canal = el("select", { id: "s-canal" }, ativos.map((c) => el("option", { value: c.id }, c.nome)));
-    const grupo = el("input", { id: "s-grupo", value: "Padaria Pão Quente x Exame", required: true });
+    const grupo = el("input", { id: "s-grupo", value: "Padaria Pão Quente x Expo", required: true });
     const autor = el("input", { id: "s-autor", value: "Marcos (Padaria)", required: true });
     const texto = el("textarea", { id: "s-texto", rows: 3, required: true });
     return el("form", {
@@ -456,7 +544,10 @@ function desenhar() {
   const cursor = focoNaResposta ? ativo.selectionStart : null;
   const rolagemLista = raiz.querySelector(".itens")?.scrollTop;
 
-  if (!estado.eu) return raiz.replaceChildren(telaLogin());
+  if (!estado.eu) {
+    const telasDeAcesso = { entrar: telaLogin, esqueci: telaEsqueci, redefinir: telaRedefinir };
+    return raiz.replaceChildren(telasDeAcesso[estado.acesso]());
+  }
 
   const telas = { atendimentos: telaAtendimentos, atendentes: telaAtendentes, whatsapp: telaWhatsapp };
   raiz.replaceChildren(el("div", { class: "tela" },
@@ -478,4 +569,11 @@ setInterval(() => {
   if (estado.eu && estado.aba === "whatsapp" && estado.eu.modo !== "simulador") atualizar();
 }, 5000);
 
-iniciar();
+fetch("/api/marca")
+  .then((r) => r.json())
+  .then((dados) => {
+    marca = dados;
+    document.title = `Central de Atendimento · ${marca.nome}`;
+  })
+  .catch(() => {})
+  .finally(iniciar);

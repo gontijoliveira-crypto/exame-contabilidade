@@ -30,10 +30,10 @@ async function montar({ decisoes = [], comIA = true } = {}) {
   const central = new Central({ banco, whatsapp, classificar, setorPadrao, esperaMs: 60_000, log: silencioso });
   whatsapp.aoReceberMensagem((m) => central.receberMensagem(m));
   const atendente = (nome, setoresDoAtendente, canais = [canal1]) => {
-    const id = banco.criarAtendente({ nome, email: `${nome.toLowerCase()}@exame.test`, senhaHash: gerarHash("senha-de-teste"), setores: setoresDoAtendente, canais });
+    const id = banco.criarAtendente({ nome, email: `${nome.toLowerCase()}@expo.test`, senhaHash: gerarHash("senha-de-teste"), setores: setoresDoAtendente, canais });
     return banco.buscarAtendente(id);
   };
-  const cliente = (texto, chatNome = "Padaria x Exame", canalId = canal1) => whatsapp.simularRecebimento(canalId, { chatNome, autorNome: "Marcos", texto });
+  const cliente = (texto, chatNome = "Padaria x Expo", canalId = canal1) => whatsapp.simularRecebimento(canalId, { chatNome, autorNome: "Marcos", texto });
   return { banco, whatsapp, central, chamadas, atendente, cliente, canal1, canal2 };
 }
 
@@ -153,7 +153,7 @@ test("resposta do atendente é enviada ao grupo com assinatura e registrada no a
 
   await c.central.responder(a.id, ana, "Segue a guia em anexo.");
 
-  assert.deepEqual(c.whatsapp.enviadas(c.canal1).map((e) => [e.jid, e.texto]), [["padaria-x-exame@g.us", "*Ana (Fiscal):*\nSegue a guia em anexo."]]);
+  assert.deepEqual(c.whatsapp.enviadas(c.canal1).map((e) => [e.jid, e.texto]), [["padaria-x-expo@g.us", "*Ana (Fiscal):*\nSegue a guia em anexo."]]);
   const depois = c.banco.buscarAtendimento(a.id);
   assert.equal(depois.status, "em_atendimento");
   assert.equal(depois.pendente, 0);
@@ -193,17 +193,17 @@ test("login: senha errada é recusada, conta inativa não entra e há bloqueio a
   const ana = c.atendente("Ana", ["fiscal"]);
   const auth = criarAuth(c.banco);
 
-  const { token } = auth.entrar("ana@exame.test", "senha-de-teste");
+  const { token } = auth.entrar("ana@expo.test", "senha-de-teste");
   assert.equal(auth.atendenteDaSessao(token).id, ana.id);
   assert.equal(auth.atendenteDaSessao("token-qualquer"), null);
 
   c.banco.atualizarAtendente(ana.id, { ativo: false });
   assert.equal(auth.atendenteDaSessao(token), null);
-  assert.throws(() => auth.entrar("ana@exame.test", "senha-de-teste"), /incorretos/);
+  assert.throws(() => auth.entrar("ana@expo.test", "senha-de-teste"), /incorretos/);
   c.banco.atualizarAtendente(ana.id, { ativo: true });
 
-  for (let i = 0; i < 5; i++) assert.throws(() => auth.entrar("ana@exame.test", "errada"));
-  assert.throws(() => auth.entrar("ana@exame.test", "senha-de-teste"), /Muitas tentativas/);
+  for (let i = 0; i < 5; i++) assert.throws(() => auth.entrar("ana@expo.test", "errada"));
+  assert.throws(() => auth.entrar("ana@expo.test", "senha-de-teste"), /Muitas tentativas/);
 });
 
 test("números separados: o atendimento só vai para quem tem acesso ao número por onde chegou", async () => {
@@ -241,4 +241,52 @@ test("sem atendente com acesso ao número, o atendimento fica na fila sem respon
   c.cliente("Preciso de uma guia", "Grupo", c.canal2);
   await c.central.processarTudo();
   assert.equal(c.banco.listarAtendimentos({})[0].atendente_id, null);
+});
+
+test("esqueci minha senha: o link troca a senha uma única vez e encerra as sessões abertas", async () => {
+  const c = await montar();
+  const ana = c.atendente("Ana", ["fiscal"]);
+  let agora = Date.parse("2026-11-18T10:00:00Z");
+  const auth = criarAuth(c.banco, { relogio: () => agora });
+
+  const { token: sessao } = auth.entrar("ana@expo.test", "senha-de-teste");
+  const pedido = auth.pedirRedefinicao("ana@expo.test");
+  assert.equal(pedido.atendente.id, ana.id);
+
+  auth.redefinirSenha(pedido.token, "nova-senha-123");
+  assert.equal(auth.atendenteDaSessao(sessao), null, "sessões antigas são encerradas");
+  assert.throws(() => auth.entrar("ana@expo.test", "senha-de-teste"), /incorretos/);
+  assert.ok(auth.entrar("ana@expo.test", "nova-senha-123").token);
+  assert.throws(() => auth.redefinirSenha(pedido.token, "outra-senha-123"), /inválido ou expirou/, "o link vale uma vez só");
+  assert.throws(() => auth.redefinirSenha("token-inventado", "outra-senha-123"), /inválido ou expirou/);
+
+  // Novo pedido invalida o anterior; o link expira em 1 hora.
+  const primeiro = auth.pedirRedefinicao("ana@expo.test");
+  const segundo = auth.pedirRedefinicao("ana@expo.test");
+  assert.throws(() => auth.redefinirSenha(primeiro.token, "outra-senha-123"), /inválido/);
+  agora += 61 * 60 * 1000;
+  assert.throws(() => auth.redefinirSenha(segundo.token, "outra-senha-123"), /expirou/);
+});
+
+test("esqueci minha senha: e-mail desconhecido ou inativo não gera link, e há limite de pedidos", async () => {
+  const c = await montar();
+  const ana = c.atendente("Ana", ["fiscal"]);
+  const auth = criarAuth(c.banco);
+  assert.equal(auth.pedirRedefinicao("ninguem@expo.test"), null);
+
+  c.banco.atualizarAtendente(ana.id, { ativo: false });
+  assert.equal(auth.pedirRedefinicao("ana@expo.test"), null);
+  c.banco.atualizarAtendente(ana.id, { ativo: true });
+
+  for (let i = 0; i < 3; i++) assert.ok(auth.pedirRedefinicao("ana@expo.test"));
+  assert.equal(auth.pedirRedefinicao("ana@expo.test"), null, "no máximo 3 pedidos por hora");
+});
+
+test("e-mail de redefinição tem o link e escapa o nome no HTML", async () => {
+  const { mensagemDeRedefinicao } = await import("../src/email.js");
+  const marca = { nome: "Expo Contabilidade", cores: { primaria: "#011433", destaque: "#D9911C" } };
+  const m = mensagemDeRedefinicao({ nome: "Ana <b>", link: "https://central.exemplo/#redefinir=abc", validadeMinutos: 60, marca });
+  assert.match(m.texto, /https:\/\/central\.exemplo\/#redefinir=abc/);
+  assert.match(m.html, /Ana &lt;b&gt;/);
+  assert.match(m.assunto, /Expo Contabilidade/);
 });

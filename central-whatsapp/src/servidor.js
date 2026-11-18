@@ -1,6 +1,7 @@
 import path from "node:path";
 import express from "express";
-import { COOKIE, gerarHash, lerCookie, normalizarEmail } from "./auth.js";
+import { COOKIE, VALIDADE_REDEFINICAO_MIN, criarLimitador, gerarHash, lerCookie, normalizarEmail } from "./auth.js";
+import { mensagemDeRedefinicao } from "./email.js";
 
 const publico = ({ senha_hash, ...resto }) => resto;
 
@@ -11,9 +12,31 @@ class ErroHttp extends Error {
   }
 }
 
-export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSeguro = false }) {
+/** Folha de estilo com as cores da marca (config/marca.json). */
+function cssDaMarca(cores) {
+  return `:root {\n  --azul: ${cores.primaria};\n  --azul-claro: ${cores.primariaClara};\n  --amarelo: ${cores.destaque};\n}\n`;
+}
+
+/** Ícone da aba quando não há logo: a inicial do escritório sobre a cor principal. */
+function iconeDaMarca(marca) {
+  const inicial = (marca.nome.trim()[0] || "?").toUpperCase().replace(/[<>&"']/g, "");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><rect width="56" height="56" rx="14" fill="${marca.cores.primaria}"/>` +
+    `<rect x="10" y="44" width="36" height="5" rx="2.5" fill="${marca.cores.destaque}"/>` +
+    `<text x="28" y="37" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="bold" fill="#fff">${inicial}</text></svg>`;
+}
+
+/** Senha nova: mínimo de 8 caracteres (e um teto, para não pesar no cálculo do hash). */
+function validarSenha(senha) {
+  if (typeof senha !== "string" || senha.length < 8) throw new ErroHttp(400, "A senha deve ter pelo menos 8 caracteres.");
+  if (senha.length > 200) throw new ErroHttp(400, "A senha pode ter no máximo 200 caracteres.");
+  return senha;
+}
+
+export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, cookieSeguro = false, log = console }) {
   const app = express();
   app.disable("x-powered-by");
+  // Atrás de um proxy reverso (Nginx, Caddy), use TRUST_PROXY=1 para req.ip ser o IP real do usuário.
+  if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
   app.use(express.json({ limit: "100kb" }));
   app.use((req, res, next) => {
     res.set({
@@ -24,6 +47,13 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
     });
     next();
   });
+  // Identidade visual (pública: aparece na tela de login).
+  app.get("/marca.css", (req, res) => res.type("css").set("Cache-Control", "no-cache").send(cssDaMarca(marca.cores)));
+  app.get("/icone", (req, res) => {
+    if (marca.icone) return res.redirect(`/${marca.icone}`);
+    res.type("svg").set("Cache-Control", "no-cache").send(iconeDaMarca(marca));
+  });
+  app.get("/api/marca", (req, res) => res.json({ nome: marca.nome, subtitulo: marca.subtitulo, logo: marca.logo ? `/${marca.logo}` : null }));
   app.use(express.static(path.join(raiz, "public")));
 
   // ---------- autenticação ----------
@@ -38,6 +68,35 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
       throw new ErroHttp(401, erro.message);
     }
     res.cookie(COOKIE, sessao.token, { httpOnly: true, sameSite: "strict", secure: cookieSeguro, expires: sessao.expiraEm });
+    res.json({ ok: true });
+  });
+
+  // ---------- esqueci minha senha ----------
+  const limitePorIp = criarLimitador(10, 60 * 60 * 1000);
+
+  app.post("/api/senha/esqueci", (req, res) => {
+    const emailInformado = normalizarEmail(req.body?.email);
+    if (!emailInformado) throw new ErroHttp(400, "Informe um e-mail válido.");
+    if (!limitePorIp(req.ip)) throw new ErroHttp(429, "Muitos pedidos deste computador. Tente de novo mais tarde.");
+    const pedido = auth.pedirRedefinicao(emailInformado);
+    if (pedido) {
+      // O token vai no fragmento (#): o navegador não o envia ao servidor nem a outros sites.
+      const link = `${urlPainel}/#redefinir=${pedido.token}`;
+      const msg = mensagemDeRedefinicao({ nome: pedido.atendente.nome, link, validadeMinutos: VALIDADE_REDEFINICAO_MIN, marca });
+      // Envio em segundo plano: a resposta tem o mesmo tempo e conteúdo exista ou não o e-mail.
+      email.enviar({ para: pedido.atendente.email, ...msg }).catch((erro) => log.error("Falha ao enviar e-mail de redefinição:", erro.message));
+    }
+    res.json({ ok: true });
+  });
+
+  app.post("/api/senha/redefinir", (req, res) => {
+    const senha = validarSenha(req.body?.senha);
+    try {
+      auth.redefinirSenha(req.body?.token, senha);
+    } catch (erro) {
+      throw new ErroHttp(400, erro.message);
+    }
+    res.clearCookie(COOKIE);
     res.json({ ok: true });
   });
 
@@ -224,10 +283,7 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, cookieSegu
       if (!Array.isArray(corpo.canais) || corpo.canais.some((c) => !canaisValidos.includes(c))) throw new ErroHttp(400, "Número de WhatsApp inválido.");
       dados.canais = corpo.canais;
     }
-    if (novo || corpo.senha) {
-      if (typeof corpo.senha !== "string" || corpo.senha.length < 8) throw new ErroHttp(400, "A senha deve ter pelo menos 8 caracteres.");
-      dados.senhaHash = gerarHash(corpo.senha);
-    }
+    if (novo || corpo.senha) dados.senhaHash = gerarHash(validarSenha(corpo.senha));
     if (corpo.setores !== undefined) {
       if (!Array.isArray(corpo.setores) || corpo.setores.some((s) => !setoresValidos.includes(s))) throw new ErroHttp(400, "Setor inválido.");
       dados.setores = corpo.setores;

@@ -1,0 +1,11 @@
+{
+  "nome": "Expo Contabilidade",
+  "subtitulo": null,
+  "logo": "marca/logo-expo.png",
+  "icone": "marca/icone-expo.png",
+  "cores": {
+    "primaria": "#011433",
+    "primariaClara": "#1F4FA8",
+    "destaque": "#D9911C"
+  }
+}

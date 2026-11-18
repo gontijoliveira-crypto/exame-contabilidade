@@ -1,7 +1,7 @@
 :root {
-  --azul: #0B2A6F;
-  --azul-claro: #1F56C3;
-  --amarelo: #FFCC1A;
+  --azul: #011433;
+  --azul-claro: #1F4FA8;
+  --amarelo: #D9911C;
   --fundo: #F3F5FA;
   --painel: #FFFFFF;
   --borda: #D7DCEA;
@@ -33,29 +33,35 @@ label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); 
 /* marca */
 .logo { display: inline-grid; justify-items: center; gap: .16em; line-height: 1; }
 .logo .palavra { display: inline-flex; align-items: baseline; font-family: var(--titulo); font-weight: 600; letter-spacing: -.03em; color: var(--azul); }
-.logo .palavra svg { height: .66em; width: .66em; margin: 0 .05em; transform: translateY(.02em); }
-.logo .sub { font-family: var(--titulo); font-weight: 500; font-size: .13em; letter-spacing: .3em; text-transform: uppercase; color: var(--suave); padding-left: .3em; white-space: nowrap; }
-.logo.grande { font-size: clamp(4.2rem, 17vw, 6.5rem); }
-.logo.barra { font-size: 2.5rem; }
-.logo.barra .sub { font-size: .16em; letter-spacing: .22em; }
+.logo .imagem { display: block; height: 1em; width: auto; max-width: min(100%, 9em); object-fit: contain; }
+.logo .sub { font-family: var(--titulo); font-weight: 500; font-size: .16em; letter-spacing: .3em; text-transform: uppercase; color: var(--suave); padding-left: .3em; white-space: nowrap; }
+.logo.grande { font-size: clamp(2.6rem, 11vw, 4.4rem); text-align: center; }
+.logo.grande .imagem { height: clamp(6.5rem, 30vw, 10.5rem); max-width: 100%; }
+.logo.barra { font-size: 1.7rem; justify-items: start; }
+.logo.barra .imagem { height: 56px; }
+.logo.barra .sub { font-size: .3em; letter-spacing: .2em; padding-left: 0; }
 h1, h2, h3, button, .chip, th { font-family: var(--titulo); }
 
 /* login */
-.login { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; padding: 32px 16px; background: #fff; }
-.login form { background: var(--painel); border: 1px solid var(--borda); border-top: 5px solid var(--amarelo); border-radius: 14px; padding: 26px 28px 28px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(11, 42, 111, .08); }
+.login { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 38px; padding: 32px 16px; background: radial-gradient(ellipse at top, #0A2552 0%, var(--azul) 60%); }
+.login .cartao-acesso { background: var(--painel); border: 1px solid var(--borda); border-top: 5px solid var(--amarelo); border-radius: 14px; padding: 26px 28px 28px; width: 100%; max-width: 380px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
 .login h1 { margin: 0 0 18px; font-size: 19px; font-weight: 600; color: var(--azul); text-align: center; }
-.login button { width: 100%; padding: 10px; }
+.login button.primario { width: 100%; padding: 10px; }
+.login .cartao-acesso form { margin: 0; }
+button.link { background: none; border: 0; padding: 6px 0 0; margin-top: 12px; color: var(--azul-claro); text-decoration: underline; font-family: var(--corpo); font-size: 14px; display: block; margin-inline: auto; }
+.aviso-ok { background: #E7F6EE; color: var(--ok); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin: 0 0 14px; }
 
 /* estrutura */
 .tela { height: 100%; display: flex; flex-direction: column; }
-.topo { background: #fff; border-bottom: 4px solid var(--amarelo); display: flex; align-items: center; gap: 8px 16px; padding: 10px 18px; flex-wrap: wrap; }
-.topo .marca { font-family: var(--titulo); font-weight: 500; color: var(--suave); border-left: 1px solid var(--borda); padding-left: 16px; align-self: stretch; display: flex; align-items: center; }
+.topo { background: var(--azul); border-bottom: 4px solid var(--amarelo); display: flex; align-items: center; gap: 8px 16px; padding: 10px 18px; flex-wrap: wrap; }
+.topo .marca { font-family: var(--titulo); font-weight: 500; color: #C9D2E6; border-left: 1px solid rgba(255, 255, 255, .2); padding-left: 16px; align-self: stretch; display: flex; align-items: center; }
 .topo nav { display: flex; gap: 4px; flex: 1; }
-.topo nav button { background: none; border: 0; color: var(--suave); border-radius: 8px; padding: 8px 14px; font-weight: 500; }
-.topo nav button:hover { background: var(--fundo); }
-.topo nav button[aria-current="page"] { background: var(--azul); color: #fff; }
-.topo .quem { font-size: 14px; color: var(--suave); }
-.topo .sair { padding: 5px 12px; }
+.topo nav button { background: none; border: 0; color: #C9D2E6; border-radius: 8px; padding: 8px 14px; font-weight: 500; }
+.topo nav button:hover { background: rgba(255, 255, 255, .08); border: 0; color: #fff; }
+.topo nav button[aria-current="page"] { background: var(--amarelo); color: var(--azul); font-weight: 600; }
+.topo .quem { font-size: 14px; color: #C9D2E6; }
+.topo .sair { padding: 5px 12px; background: transparent; color: #fff; border-color: rgba(255, 255, 255, .35); }
+.topo .sair:hover { border-color: var(--amarelo); }
 .chip { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; display: inline-block; }
 .chip.ok { background: #D6F3E3; color: var(--ok); }
 .chip.aviso { background: #FFF6D1; color: #8A6400; }

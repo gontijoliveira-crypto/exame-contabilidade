@@ -1,7 +1,8 @@
 import { criarAuth, gerarHash, gerarSenha } from "./auth.js";
 import { Central } from "./central.js";
 import { criarClassificador } from "./classificador.js";
-import { carregarSetores, config } from "./config.js";
+import { carregarMarca, carregarSetores, config } from "./config.js";
+import { criarEnviadorDeEmail } from "./email.js";
 import { abrirBanco } from "./db.js";
 import { criarServidor } from "./servidor.js";
 import { criarGerenciadorDeCanais } from "./whatsapp/canais.js";
@@ -41,12 +42,20 @@ central.setMaxListeners(0); // um ouvinte por painel aberto
 whatsapp.aoReceberMensagem((msg) => central.receberMensagem(msg));
 whatsapp.aoMudarEstado((canalId, estado) => central.emit("mudou", { canalId, whatsapp: estado.status }));
 
+const email = criarEnviadorDeEmail({ smtp: config.smtp });
+if (!email.configurado) {
+  console.warn("AVISO: SMTP não configurado. Os e-mails de \"esqueci minha senha\" serão mostrados no terminal, não enviados.");
+}
+
 const app = criarServidor({
   banco,
   central,
   auth: criarAuth(banco),
   whatsapp,
   raiz: config.raiz,
+  marca: carregarMarca(),
+  email,
+  urlPainel: config.urlPainel,
   cookieSeguro: process.env.NODE_ENV === "production",
 });
 
