@@ -8,7 +8,7 @@ import { conferirData } from "../src/calculo.js";
 import { contraste, cssDaMarca, iconeDaMarca, legivelSobre, textoSobre } from "../src/marca.js";
 
 const EXPO = { primaria: "#011433", primariaClara: "#1F4FA8", destaque: "#D9911C" };
-const EXAME = { primaria: "#0B2A6F", primariaClara: "#1F56C3", destaque: "#FFCC1A" };
+const AZUL_E_AMARELO = { primaria: "#0B2A6F", primariaClara: "#1F56C3", destaque: "#FFCC1A" };
 const CLARA = { primaria: "#F2F2F2", primariaClara: "#9AD0FF", destaque: "#222222" };
 const variavel = (css, nome, bloco = 0) => new RegExp(`--${nome}: (#[0-9A-F]{6});`, "g").exec(css.split("@media")[bloco])?.[1];
 
@@ -28,7 +28,7 @@ test("a marca da Expo está configurada e os arquivos existem", () => {
 });
 
 test("as cores derivadas da marca são sempre legíveis (contraste de texto 4,5:1)", () => {
-  for (const cores of [EXPO, EXAME, CLARA]) {
+  for (const cores of [EXPO, AZUL_E_AMARELO, CLARA]) {
     const css = cssDaMarca(cores);
     assert.equal(variavel(css, "azul"), cores.primaria.toUpperCase());
     assert.equal(variavel(css, "amarelo"), cores.destaque.toUpperCase());

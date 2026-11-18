@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Exame Contabilidade e Consultoria</title>
-<meta name="description" content="Exame Contabilidade e Consultoria. Site em construção.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 56 56%27%3E%3Crect width=%2756%27 height=%2756%27 rx=%2714%27 fill=%27%230B2A6F%27/%3E%3Cpath d=%27M15 15 L41 41%27 stroke=%27%23FFFFFF%27 stroke-width=%277%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M13 33 L21 42 L43 14%27 fill=%27none%27 stroke=%27%23FFCC1A%27 stroke-width=%277%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E">
+<title>Expo Contabilidade e Consultoria</title>
+<meta name="description" content="Expo Contabilidade e Consultoria. Site em construção.">
+<link rel="icon" href="marca/icone-expo.png">
+<meta name="theme-color" content="#011433">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -13,7 +14,7 @@
 /* Layout: uma tela com a marca centralizada e o aviso de construção logo abaixo; política de privacidade em #privacidade. */
 :root{
   --paper:#FFFFFF; --ink:#0B1F4D; --muted:#4A5677; --line:#D7DCEA;
-  --navy:#0B2A6F; --yellow:#FFCC1A; --accent:#1F56C3; --brass:#8A6400;
+  --navy:#011433; --yellow:#D9911C; --accent:#1F4FA8; --brass:#8A5A00;
   --display:"Lexend","Segoe UI",system-ui,sans-serif;
   --body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -29,13 +30,12 @@ main{flex:1;display:flex}
 /* Capa */
 .cover{flex:1;display:grid;place-items:center;padding-block:48px;text-align:center}
 .brand{display:grid;justify-items:center;gap:14px}
-.word{display:inline-flex;align-items:baseline;font-family:var(--display);font-weight:600;letter-spacing:-.03em;line-height:1;color:var(--navy);font-size:clamp(3.6rem,13vw,7.5rem)}
-.word svg{height:.66em;width:.66em;margin:0 .05em;transform:translateY(.02em);overflow:visible}
-.sub{font-family:var(--display);font-weight:500;font-size:clamp(.66rem,1.6vw,.9rem);letter-spacing:.3em;text-transform:uppercase;color:var(--muted);padding-left:.3em}
+.logo-titulo{margin:0}
+.logo{display:block;width:min(420px,80vw);height:auto}
 .notice{margin-top:44px;display:grid;justify-items:center;gap:12px}
-.pill{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:500;font-size:.95rem;color:var(--navy);background:#FFF6D1;border:1px solid var(--yellow);padding:8px 18px;border-radius:40px}
-.pill i{width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 0 rgba(255,204,26,.6);animation:pulse 2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(255,204,26,0)}100%{box-shadow:0 0 0 0 rgba(255,204,26,0)}}
+.pill{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:500;font-size:.95rem;color:var(--navy);background:#FFF3DC;border:1px solid var(--yellow);padding:8px 18px;border-radius:40px}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 0 rgba(217,145,28,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(217,145,28,0)}100%{box-shadow:0 0 0 0 rgba(217,145,28,0)}}
 @media (prefers-reduced-motion: reduce){.pill i{animation:none}}
 .notice p{margin:0;color:var(--muted);max-width:40ch}
 
@@ -66,8 +66,7 @@ footer a:hover{color:var(--ink)}
   <section class="cover" id="view-inicio">
     <div class="wrap">
       <div class="brand">
-        <h1 style="margin:0"><span class="word" aria-label="exame">e<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#0B2A6F"/><path d="M15 15 L41 41" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>ame</span></h1>
-        <span class="sub">Contabilidade e Consultoria</span>
+        <h1 class="logo-titulo"><img class="logo" src="marca/logo-expo.png" alt="Expo Contabilidade e Consultoria" width="940" height="409"></h1>
       </div>
       <div class="notice">
         <span class="pill"><i aria-hidden="true"></i>Site em construção</span>
@@ -84,7 +83,7 @@ footer a:hover{color:var(--ink)}
         <h1>Política de Privacidade</h1>
         <p class="updated">Última atualização: 5 de novembro de 2026</p>
 
-        <p>Esta política explica como a <strong>Exame Contabilidade e Consultoria</strong> (“Exame”, “nós”), inscrita no CNPJ 00.000.000/0001-00, com sede em [endereço completo], trata os dados pessoais de quem visita este site ou entra em contato conosco.</p>
+        <p>Esta política explica como a <strong>Expo Contabilidade e Consultoria</strong> (“Expo”, “nós”), inscrita no CNPJ 00.000.000/0001-00, com sede em [endereço completo], trata os dados pessoais de quem visita este site ou entra em contato conosco.</p>
 
         <h2>1. Quais dados coletamos</h2>
         <ul>
@@ -131,7 +130,7 @@ footer a:hover{color:var(--ink)}
         <p>Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).</p>
 
         <h2>9. Encarregado e contato</h2>
-        <p>Para exercer seus direitos ou tirar dúvidas, fale com nosso encarregado pelo tratamento de dados pessoais: <strong>[Nome do encarregado]</strong>, pelo e-mail <strong>privacidade@examecontabilidade.com.br</strong>. Respondemos em até 15 dias.</p>
+        <p>Para exercer seus direitos ou tirar dúvidas, fale com nosso encarregado pelo tratamento de dados pessoais: <strong>[Nome do encarregado]</strong>, pelo e-mail <strong>privacidade@expocontabilidade.com.br</strong>. Respondemos em até 15 dias.</p>
 
         <h2>10. Alterações</h2>
         <p>Esta política pode ser atualizada. A data da última versão fica sempre indicada no topo desta página.</p>
@@ -143,7 +142,7 @@ footer a:hover{color:var(--ink)}
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Exame Contabilidade e Consultoria</span>
+    <span>© 2026 Expo Contabilidade e Consultoria</span>
     <a href="#privacidade">Política de Privacidade</a>
   </div>
 </footer>
@@ -154,7 +153,7 @@ footer a:hover{color:var(--ink)}
   function route(){
     const isPol = location.hash === '#privacidade';
     home.hidden = isPol; pol.hidden = !isPol;
-    document.title = isPol ? 'Política de Privacidade · Exame Contabilidade e Consultoria' : 'Exame Contabilidade e Consultoria';
+    document.title = isPol ? 'Política de Privacidade · Expo Contabilidade e Consultoria' : 'Expo Contabilidade e Consultoria';
     window.scrollTo(0,0);
   }
   window.addEventListener('hashchange',route); route();
