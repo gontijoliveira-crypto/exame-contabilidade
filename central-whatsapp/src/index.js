@@ -1,7 +1,8 @@
 import { criarAuth, gerarHash, gerarSenha } from "./auth.js";
 import { Central } from "./central.js";
 import { criarClassificador } from "./classificador.js";
-import { carregarMarca, carregarSetores, config } from "./config.js";
+import { carregarEntrada, carregarMarca, carregarSetores, config } from "./config.js";
+import { criarFonteDeEntrada } from "./entrada.js";
 import { criarEnviadorDeEmail } from "./email.js";
 import { abrirBanco } from "./db.js";
 import { criarServidor } from "./servidor.js";
@@ -47,6 +48,15 @@ if (!email.configurado) {
   console.warn("AVISO: SMTP não configurado. Os e-mails de \"esqueci minha senha\" serão mostrados no terminal, não enviados.");
 }
 
+const cfgEntrada = carregarEntrada();
+const entrada = criarFonteDeEntrada({
+  fonte: cfgEntrada.fonte,
+  cliente: cfgEntrada.cliente,
+  arquivoCache: cfgEntrada.arquivoCache,
+  intervaloMs: (cfgEntrada.atualizarMinutos || 60) * 60 * 1000,
+});
+entrada.iniciar(); // sem esperar: a tela de entrada funciona mesmo sem os indicadores
+
 const app = criarServidor({
   banco,
   central,
@@ -56,6 +66,7 @@ const app = criarServidor({
   marca: carregarMarca(),
   email,
   urlPainel: config.urlPainel,
+  entrada,
   cookieSeguro: process.env.NODE_ENV === "production",
 });
 

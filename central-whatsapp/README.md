@@ -120,6 +120,23 @@ precisa ser refeito.
 
 `npm test` roda os testes automatizados (usam o simulador e uma IA de mentira; não gastam créditos).
 
+## Tela de entrada (padrão da Central de Painéis)
+
+A tela de entrada é a mesma dos painéis da Central de Painéis: à esquerda, indicadores, ações, frete,
+agro e notícias; à direita, o MacBook com o formulário de acesso. O desenho é o bloco
+ENTRADA-INDICADORES da Central, copiado em `public/entrada/` (não edite à mão: copie de novo da Central
+quando ele mudar). Os dados vêm do `indicadores.json` que a Central atualiza todo dia no Google Drive
+(endereço em `config/entrada.json`; o arquivo precisa estar compartilhado como "qualquer pessoa com o
+link: leitor"). A central guarda a última versão em `dados/` e, sem indicadores, mostra o cartão simples.
+
+## Publicação
+
+O `Dockerfile` publica a central em qualquer hospedagem com Docker (Railway, Render, Fly.io ou um
+servidor próprio). Ela precisa de um **volume persistente** montado em `/dados` (banco e sessões do
+WhatsApp) e de HTTPS. A hospedagem informa a porta pela variável `PORT`; `/saude` responde `{"ok":true}`
+para a verificação de saúde. O passo a passo completo está no guia "Central de Atendimento WhatsApp —
+Passo a passo de configuração" no Google Drive.
+
 ## Identidade visual
 
 Nome, logo e cores ficam em [`config/marca.json`](config/marca.json); a logo e o ícone ficam em

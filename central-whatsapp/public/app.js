@@ -146,9 +146,79 @@ async function acao(caminho, corpo = {}) {
 }
 
 // ---------- telas ----------
-/** Moldura das telas sem login: logo em destaque e um cartão com o formulário. */
-function telaDeAcesso(titulo, ...conteudo) {
-  return el("div", { class: "login" }, logo("grande"), el("div", { class: "cartao-acesso" }, el("h1", {}, titulo), ...conteudo));
+/*
+ * Telas sem login (entrar, esqueci, nova senha) no mesmo padrão dos painéis da Central de Painéis:
+ * à esquerda, indicadores e notícias do mercado; à direita, um MacBook com o formulário na tela.
+ * O desenho vem do bloco ENTRADA-INDICADORES da Central (public/entrada/). Sem os indicadores,
+ * fica o cartão simples sobre o fundo azul.
+ */
+let entradaDados; // undefined = ainda não buscou; null = indisponível
+const entradaPronta = fetch("/api/entrada")
+  .then((r) => (r.ok ? r.json() : null))
+  .catch(() => null)
+  .then((d) => (entradaDados = d && d.indicadores && Object.keys(d.indicadores).length ? d : null));
+
+/** Mensagem do formulário (erro em vermelho claro, confirmação em verde claro). */
+function mensagem(texto = "", ok = false) {
+  return el("div", { id: "lg-msg", class: `erro${ok ? " ok" : ""}`, role: ok ? "status" : "alert" }, texto);
+}
+function mostrar(msg, texto, ok = false) {
+  msg.textContent = texto;
+  msg.className = `erro${ok ? " ok" : ""}`;
+}
+
+/** Monta a tela: o formulário (com a logo) dentro do MacBook, ao lado dos indicadores. */
+function telaDeAcesso(formulario) {
+  const login = el("div", { class: "login", id: "login" }, logo("grande"), formulario);
+  if (entradaDados && window.IXL_render) montarMesa(login, formulario, entradaDados);
+  else if (entradaDados === undefined) entradaPronta.then(() => entradaDados && !estado.eu && desenhar());
+  return login;
+}
+
+function montarMesa(login, formulario, dados) {
+  const C = dados.cliente || {};
+  const cor = C.cor || "#C9962B";
+  const aside = el("aside", { class: "ixl ixl-claro", "aria-label": "Indicadores do mercado" });
+  const relogio = el("div", { class: "ixl-ck" }, el("div", { class: "d" }), el("div", { class: "t" }));
+  const hora = el("span", { class: "ixl-hr" });
+  const tela = el("div", { class: "ixl-scr" },
+    el("div", { class: "ixl-notch" }),
+    el("div", { class: "ixl-mb" }, el("span", { class: "ixl-nm" }, C.nome || marca.nome), hora),
+    relogio,
+    formulario);
+  const sombra = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16), c = (x) => Math.max(0, Math.min(255, x));
+    return "#" + ((1 << 24) | (c((n >> 16) + a) << 16) | (c(((n >> 8) & 255) + a) << 8) | c((n & 255) + a)).toString(16).slice(1);
+  };
+  tela.style.background =
+    `radial-gradient(120% 90% at 15% 10%,${sombra(cor, 40)} 0%,transparent 55%),radial-gradient(90% 80% at 90% 20%,${cor} 0%,transparent 60%),` +
+    `radial-gradient(100% 90% at 70% 100%,${sombra(cor, -60)} 0%,transparent 60%),linear-gradient(160deg,${sombra(cor, -90)},#0a1f2e)`;
+  const direita = el("div", { class: "ixl-dir" },
+    el("div", { class: "ixl-mac" }, el("div", { class: "ixl-lid" }, tela), el("div", { class: "ixl-base" })),
+    el("p", { class: "ixl-hint" }, "Entre com seu e-mail e senha. Se esqueceu a senha, use \"Esqueci minha senha\"."),
+    el("div", { class: "ixl-foot" }, el("span", {}, "Central de Atendimento"), el("span", {}, "Acesso privado"), el("span", {}, marca.nome || C.nome)));
+  const tick = () => {
+    const n = new Date(), d = n.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+    relogio.firstChild.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    relogio.lastChild.textContent = n.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    hora.textContent = n.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" }) + " " + relogio.lastChild.textContent;
+  };
+  tick();
+  clearInterval(montarMesa.relogio);
+  montarMesa.relogio = setInterval(() => (document.contains(relogio) ? tick() : clearInterval(montarMesa.relogio)), 20000);
+  login.replaceChildren(aside, direita);
+  login.classList.add("ixl-on");
+  window.IXL_render(aside, dados);
+}
+
+/** Formulário de acesso: logo, título e os campos do passo atual. */
+function formularioDeAcesso(titulo, aoEnviar, ...campos) {
+  const logoImg = marca.logo && el("img", { class: "logo-form", src: marca.logo, alt: marca.nome });
+  return el("form", { class: "cartao-acesso", onsubmit: (e) => { e.preventDefault(); aoEnviar(); } },
+    logoImg,
+    el("h1", {}, titulo),
+    el("p", { class: "sub" }, "Atendimento por WhatsApp"),
+    ...campos);
 }
 
 function irPara(acesso, aviso = "") {
@@ -158,91 +228,81 @@ function irPara(acesso, aviso = "") {
 }
 
 function telaLogin() {
-  const erro = el("div", { class: "erro", role: "alert" });
-  const email = el("input", { id: "email", type: "email", autocomplete: "username", required: true });
-  const senha = el("input", { id: "senha", type: "password", autocomplete: "current-password", required: true });
-  const botao = el("button", { class: "primario", type: "submit" }, "Entrar");
-  return telaDeAcesso("Central de Atendimento",
-    estado.avisoAcesso && el("p", { class: "aviso-ok", role: "status" }, estado.avisoAcesso),
-    el("form", {
-      onsubmit: async (e) => {
-        e.preventDefault();
-        botao.disabled = true;
-        try {
-          await api("/login", { email: email.value, senha: senha.value });
-          estado.avisoAcesso = "";
-          await iniciar();
-        } catch (falha) {
-          erro.textContent = falha.message;
-          botao.disabled = false;
-        }
-      },
-    },
-      el("div", { class: "campo" }, el("label", { for: "email" }, "E-mail"), email),
-      el("div", { class: "campo" }, el("label", { for: "senha" }, "Senha"), senha),
-      erro,
-      botao,
-    ),
-    el("button", { class: "link", type: "button", onclick: () => irPara("esqueci") }, "Esqueci minha senha"),
-  );
+  const msg = mensagem(estado.avisoAcesso, !!estado.avisoAcesso);
+  const email = el("input", { id: "lg-email", type: "email", autocomplete: "username", required: true });
+  const senha = el("input", { id: "lg-senha", type: "password", autocomplete: "current-password", required: true });
+  const botao = el("button", { class: "primario ent", type: "submit", id: "lg-entrar" }, "Entrar");
+  try { email.value = localStorage.getItem("central_email") || ""; } catch { /* sem armazenamento */ }
+  queueMicrotask(() => (email.value ? senha : email).focus());
+  return telaDeAcesso(formularioDeAcesso("Central de Atendimento", async () => {
+    botao.disabled = true;
+    mostrar(msg, "Conferindo…", true);
+    try {
+      await api("/login", { email: email.value, senha: senha.value });
+      try { localStorage.setItem("central_email", email.value.trim()); } catch { /* sem armazenamento */ }
+      estado.avisoAcesso = "";
+      await iniciar();
+    } catch (falha) {
+      mostrar(msg, falha.message);
+      botao.disabled = false;
+    }
+  },
+    el("label", {}, "E-mail", email),
+    el("label", {}, "Senha", senha),
+    msg,
+    botao,
+    el("button", { class: "link lk", type: "button", id: "lg-esqueci", onclick: () => irPara("esqueci") }, "Esqueci minha senha"),
+  ));
 }
 
 function telaEsqueci() {
-  const erro = el("div", { class: "erro", role: "alert" });
-  const email = el("input", { id: "email", type: "email", autocomplete: "username", required: true });
-  const botao = el("button", { class: "primario", type: "submit" }, "Enviar link");
-  const voltar = el("button", { class: "link", type: "button", onclick: () => irPara("entrar") }, "Voltar para a entrada");
-  const formulario = el("form", {
-    onsubmit: async (e) => {
-      e.preventDefault();
-      botao.disabled = true;
-      try {
-        await api("/senha/esqueci", { email: email.value });
-        formulario.replaceWith(el("p", { class: "aviso-ok", role: "status" },
-          `Se ${email.value.trim()} estiver cadastrado, você vai receber em instantes um e-mail com o link para criar uma nova senha. ` +
-          "O link vale por 1 hora. Confira também a caixa de spam."));
-      } catch (falha) {
-        erro.textContent = falha.message;
-        botao.disabled = false;
-      }
-    },
+  const msg = mensagem();
+  const email = el("input", { id: "lg-email", type: "email", autocomplete: "username", required: true });
+  try { email.value = localStorage.getItem("central_email") || ""; } catch { /* sem armazenamento */ }
+  const botao = el("button", { class: "primario ent", type: "submit" }, "Enviar link por e-mail");
+  queueMicrotask(() => email.focus());
+  return telaDeAcesso(formularioDeAcesso("Esqueci minha senha", async () => {
+    botao.disabled = true;
+    try {
+      await api("/senha/esqueci", { email: email.value });
+      mostrar(msg, `Se ${email.value.trim()} estiver cadastrado, o link para criar uma nova senha chega em instantes (veja também o spam). Ele vale por 1 hora.`, true);
+    } catch (falha) {
+      mostrar(msg, falha.message);
+      botao.disabled = false;
+    }
   },
     el("p", { class: "dica" }, "Informe o e-mail que você usa para entrar. Vamos enviar um link para você criar uma nova senha."),
-    el("div", { class: "campo" }, el("label", { for: "email" }, "E-mail"), email),
-    erro,
+    el("label", {}, "E-mail", email),
+    msg,
     botao,
-  );
-  return telaDeAcesso("Esqueci minha senha", formulario, voltar);
+    el("button", { class: "link lk", type: "button", id: "lg-voltar", onclick: () => irPara("entrar") }, "Voltar"),
+  ));
 }
 
 function telaRedefinir() {
-  const erro = el("div", { class: "erro", role: "alert" });
-  const senha = el("input", { id: "nova-senha", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
-  const repetir = el("input", { id: "repetir-senha", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
-  const botao = el("button", { class: "primario", type: "submit" }, "Salvar nova senha");
-  return telaDeAcesso("Criar nova senha",
-    el("form", {
-      onsubmit: async (e) => {
-        e.preventDefault();
-        if (senha.value !== repetir.value) return (erro.textContent = "As duas senhas não são iguais.");
-        botao.disabled = true;
-        try {
-          await api("/senha/redefinir", { token: estado.tokenRedefinicao, senha: senha.value });
-          estado.tokenRedefinicao = null;
-          irPara("entrar", "Senha alterada. Entre com a nova senha.");
-        } catch (falha) {
-          erro.textContent = falha.message;
-          botao.disabled = false;
-        }
-      },
-    },
-      el("div", { class: "campo" }, el("label", { for: "nova-senha" }, "Nova senha (mínimo de 8 caracteres)"), senha),
-      el("div", { class: "campo" }, el("label", { for: "repetir-senha" }, "Repita a nova senha"), repetir),
-      erro,
-      botao,
-    ),
-    el("button", { class: "link", type: "button", onclick: () => irPara("esqueci") }, "Pedir um novo link"),
-  );
+  const msg = mensagem();
+  const senha = el("input", { id: "lg-nova", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
+  const repetir = el("input", { id: "lg-nova2", type: "password", autocomplete: "new-password", required: true, minLength: 8 });
+  const botao = el("button", { class: "primario ent", type: "submit", id: "lg-definir" }, "Salvar nova senha");
+  queueMicrotask(() => senha.focus());
+  return telaDeAcesso(formularioDeAcesso("Criar nova senha", async () => {
+    if (senha.value !== repetir.value) return mostrar(msg, "As duas senhas não são iguais.");
+    botao.disabled = true;
+    try {
+      await api("/senha/redefinir", { token: estado.tokenRedefinicao, senha: senha.value });
+      estado.tokenRedefinicao = null;
+      irPara("entrar", "Senha alterada. Entre com a nova senha.");
+    } catch (falha) {
+      mostrar(msg, falha.message);
+      botao.disabled = false;
+    }
+  },
+    el("label", {}, "Nova senha (mínimo de 8 caracteres)", senha),
+    el("label", {}, "Repita a nova senha", repetir),
+    msg,
+    botao,
+    el("button", { class: "link lk", type: "button", id: "lg-voltar", onclick: () => irPara("esqueci") }, "Pedir um novo link"),
+  ));
 }
 
 function topo() {

@@ -290,3 +290,32 @@ test("e-mail de redefinição tem o link e escapa o nome no HTML", async () => {
   assert.match(m.html, /Ana &lt;b&gt;/);
   assert.match(m.assunto, /Expo Contabilidade/);
 });
+
+test("tela de entrada: lê os indicadores da fonte, guarda cache e mantém o último dado se a fonte falhar", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { criarFonteDeEntrada } = await import("../src/entrada.js");
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "entrada-"));
+  const fonte = path.join(pasta, "indicadores.json");
+  const cache = path.join(pasta, "cache", "entrada.json");
+  fs.writeFileSync(fonte, JSON.stringify({ indicadores: { selic: { nome: "Selic", valor: 13.75 } }, noticias: { itens: [] } }));
+  const cliente = { id: "expo", nome: "Expo Contabilidade" };
+  const silencio = { warn() {} };
+
+  const f = criarFonteDeEntrada({ fonte, cliente, arquivoCache: cache, log: silencio });
+  assert.equal(f.dados(), null);
+  await f.atualizar();
+  assert.equal(f.dados().indicadores.selic.valor, 13.75);
+  assert.equal(f.dados().cliente.nome, "Expo Contabilidade");
+
+  fs.writeFileSync(fonte, "<html>login do Google</html>");
+  await f.atualizar();
+  assert.equal(f.dados().indicadores.selic.valor, 13.75, "mantém o último dado bom");
+
+  // Ao reiniciar, usa o cache enquanto a fonte não responde.
+  const g = criarFonteDeEntrada({ fonte: path.join(pasta, "nao-existe.json"), cliente, arquivoCache: cache, log: silencio });
+  await g.iniciar();
+  assert.equal(g.dados().indicadores.selic.valor, 13.75);
+  fs.rmSync(pasta, { recursive: true, force: true });
+});

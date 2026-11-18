@@ -47,7 +47,16 @@ h1, h2, h3, button, .chip, th { font-family: var(--titulo); }
 .login .cartao-acesso { background: var(--painel); border: 1px solid var(--borda); border-top: 5px solid var(--amarelo); border-radius: 14px; padding: 26px 28px 28px; width: 100%; max-width: 380px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
 .login h1 { margin: 0 0 18px; font-size: 19px; font-weight: 600; color: var(--azul); text-align: center; }
 .login button.primario { width: 100%; padding: 10px; }
-.login .cartao-acesso form { margin: 0; }
+.login .cartao-acesso { display: flex; flex-direction: column; gap: 12px; }
+.login .cartao-acesso h1 { margin: 0; }
+.login .cartao-acesso .sub { margin: -8px 0 4px; text-align: center; font-size: 13px; color: var(--suave); }
+.login .cartao-acesso label { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.login .cartao-acesso > img.logo-form { display: none; }
+.login .cartao-acesso .erro:empty { display: none; }
+.erro.ok { color: var(--ok); }
+#login.ixl-on > .logo { display: none; }
+#login.ixl-on .ixl-scr > form .dica { color: rgba(255, 255, 255, .85) !important; }
+#login.ixl-on .ixl-scr > form > img.logo-form { max-width: 170px !important; padding: 8px 14px; }
 button.link { background: none; border: 0; padding: 6px 0 0; margin-top: 12px; color: var(--azul-claro); text-decoration: underline; font-family: var(--corpo); font-size: 14px; display: block; margin-inline: auto; }
 .aviso-ok { background: #E7F6EE; color: var(--ok); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin: 0 0 14px; }
 

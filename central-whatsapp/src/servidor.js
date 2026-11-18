@@ -32,7 +32,7 @@ function validarSenha(senha) {
   return senha;
 }
 
-export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, cookieSeguro = false, log = console }) {
+export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, email, urlPainel, entrada = null, cookieSeguro = false, log = console }) {
   const app = express();
   app.disable("x-powered-by");
   // Atrás de um proxy reverso (Nginx, Caddy), use TRUST_PROXY=1 para req.ip ser o IP real do usuário.
@@ -47,6 +47,9 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, ema
     });
     next();
   });
+  // Verificação de saúde para a hospedagem (sem dados).
+  app.get("/saude", (req, res) => res.json({ ok: true }));
+
   // Identidade visual (pública: aparece na tela de login).
   app.get("/marca.css", (req, res) => res.type("css").set("Cache-Control", "no-cache").send(cssDaMarca(marca.cores)));
   app.get("/icone", (req, res) => {
@@ -54,6 +57,12 @@ export function criarServidor({ banco, central, auth, whatsapp, raiz, marca, ema
     res.type("svg").set("Cache-Control", "no-cache").send(iconeDaMarca(marca));
   });
   app.get("/api/marca", (req, res) => res.json({ nome: marca.nome, subtitulo: marca.subtitulo, logo: marca.logo ? `/${marca.logo}` : null }));
+  // Indicadores e notícias da tela de entrada (dados públicos, os mesmos dos painéis da Central de Painéis).
+  app.get("/api/entrada", (req, res) => {
+    const dados = entrada?.dados();
+    if (!dados) return res.status(503).json({ erro: "Indicadores indisponíveis no momento." });
+    res.set("Cache-Control", "public, max-age=300").json(dados);
+  });
   app.use(express.static(path.join(raiz, "public")));
 
   // ---------- autenticação ----------

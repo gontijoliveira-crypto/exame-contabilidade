@@ -13,12 +13,12 @@ const pastaDados = path.resolve(raiz, env.PASTA_DADOS || "./dados");
 
 export const config = {
   raiz,
-  porta: Number(env.PORTA || 3000),
+  porta: Number(env.PORTA || env.PORT || 3000), // PORT é a variável usada pelas hospedagens (Railway, Render, Fly)
   whatsappModo: env.WHATSAPP_MODO || "simulador",
   claudeModelo: env.CLAUDE_MODELO || "claude-opus-5-5",
   adminEmail: (env.ADMIN_EMAIL || "admin@escritorio.com.br").trim().toLowerCase(),
   // Endereço pelo qual os atendentes abrem o painel; usado nos links enviados por e-mail.
-  urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || 3000}`).replace(/\/+$/, ""),
+  urlPainel: (env.URL_PAINEL || `http://localhost:${env.PORTA || env.PORT || 3000}`).replace(/\/+$/, ""),
   smtp: {
     host: env.SMTP_HOST || "",
     porta: Number(env.SMTP_PORTA || 587),
@@ -48,6 +48,12 @@ export function carregarMarca() {
     }
   }
   return marca;
+}
+
+/** Tela de entrada no padrão da Central de Painéis (config/entrada.json). ENTRADA_FONTE troca a fonte dos indicadores. */
+export function carregarEntrada() {
+  const entrada = JSON.parse(fs.readFileSync(path.join(raiz, "config", "entrada.json"), "utf8"));
+  return { ...entrada, fonte: env.ENTRADA_FONTE ?? entrada.fonte, arquivoCache: path.join(pastaDados, "indicadores-entrada.json") };
 }
 
 export function carregarSetores() {

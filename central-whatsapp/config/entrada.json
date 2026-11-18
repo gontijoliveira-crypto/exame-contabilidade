@@ -1,0 +1,29 @@
+{
+  "_comentario": "Tela de entrada igual à dos painéis da Central de Painéis. 'fonte' é o indicadores.json da Central (no Google Drive); 'cliente' é a cópia do cliente Expo do central.json da Central.",
+  "fonte": "https://drive.google.com/uc?export=download&id=1vtyEXjrZ3VxrYseDPLV02GYdnqZynt6f",
+  "atualizarMinutos": 60,
+  "cliente": {
+    "id": "expo",
+    "nome": "Expo Contabilidade",
+    "iniciais": "EX",
+    "cor": "#C9962B",
+    "ordem": 9,
+    "setor": "Rotina fiscal e contábil: juros, inflação, câmbio e atividade.",
+    "indicadores": [
+      "selic",
+      "cdi",
+      "ipca12",
+      "igpm12",
+      "dolar",
+      "ibcbr"
+    ],
+    "tema": "tributario",
+    "acoes": [
+      "b3_bvsp",
+      "b3_ifix",
+      "b3_b3sa3",
+      "b3_itub4",
+      "b3_petr4"
+    ]
+  }
+}
