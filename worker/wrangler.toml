@@ -1,0 +1,7 @@
+name = "calculadora-cbs"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Origens extras além de examecontabilidade.com.br (separadas por vírgula), se precisar.
+# [vars]
+# ALLOWED_ORIGINS = "https://exemplo.com.br"
