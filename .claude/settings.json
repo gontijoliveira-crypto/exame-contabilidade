@@ -113,7 +113,9 @@
     "allow": [
       "Bash(trail:*)",
       "Bash(graft:*)",
-      "Bash(npx graft:*)"
+      "Bash(npx graft:*)",
+      "Bash(graft-dev:*)",
+      "Bash(node dist/cli.js:*)"
     ]
   }
 }
