@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>Carrossel PLP 299</title>
+<title>Carrossel PLP 299 — Expo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
 <style>
 :root{
   --paper:#FFFFFF; --ink:#0B1F4D; --muted:#4A5677; --line:#D7DCEA;
-  --navy:#0B2A6F; --yellow:#FFCC1A; --accent:#1F56C3; --brass:#8A6400; --cream:#FFF6D1;
+  --navy:#011433; --yellow:#D9911C; --accent:#1F4FA8; --brass:#8A5A00; --cream:#FFF6D1;
   --display:"Lexend",system-ui,sans-serif; --body:"Nunito Sans",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
@@ -17,7 +17,8 @@ body{margin:0;background:#e9ecf3;font-family:var(--body);color:var(--ink)}
 .slide.dark{background:var(--navy);color:#fff}
 
 /* Logo */
-.logo{display:flex;flex-direction:column;gap:8px}
+.logo{display:flex}
+.logo img{height:96px;width:auto;display:block}
 .word{display:inline-flex;align-items:baseline;font-family:var(--display);font-weight:600;letter-spacing:-.03em;line-height:1;color:var(--navy);font-size:58px}
 .word svg{height:.66em;width:.66em;margin:0 .05em;transform:translateY(.02em)}
 .sub{font-family:var(--display);font-weight:500;font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
@@ -98,12 +99,11 @@ h2{font-size:64px;color:var(--navy)}
 </head>
 <body>
 
-<template id="logo"><div class="logo"><span class="word" aria-label="exame">e<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#0B2A6F"/><path d="M15 15 L41 41" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>ame</span><span class="sub">Contabilidade e Consultoria</span></div></template>
-<template id="logo-dark"><div class="logo"><span class="word" aria-label="exame">e<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#FFFFFF"/><path d="M15 15 L41 41" stroke="#0B2A6F" stroke-width="7" stroke-linecap="round"/><path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>ame</span><span class="sub">Contabilidade e Consultoria</span></div></template>
+<template id="logo"><div class="logo"><img src="marca/logo-expo.png" alt="Expo Contabilidade e Consultoria"></div></template>
+<template id="logo-dark"><div class="logo"><img src="marca/logo-expo.png" alt="Expo Contabilidade e Consultoria"></div></template>
 
 <!-- 1 CAPA -->
 <section class="slide dark cover">
-  <svg class="deco" viewBox="0 0 56 56"><rect width="56" height="56" rx="14" fill="#fff"/></svg>
   <div class="top"><div data-logo="dark"></div><span class="count">01/09</span></div>
   <h1>Ajuste fiscal:<br>o que muda <em>se a Câmara aprovar</em></h1>
   <p class="lead" style="font-size:34px;margin-top:34px">PLP 299/2026 — o antes e o depois, ponto a ponto, e quem sente o impacto.</p>
@@ -221,7 +221,7 @@ h2{font-size:64px;color:var(--navy)}
     <div class="step"><div class="dot">3</div><div><h3>Sanção presidencial</h3><p>Depois de aprovado nas duas Casas, vira lei complementar.</p></div></div>
   </div>
   <div class="cta"><p>Sua empresa usa <b>compensação tributária</b>? Vale revisar o planejamento antes da regulamentação.</p><span class="btn">Fale com a gente</span></div>
-  <div class="foot"><span>examecontabilidade.com.br</span><span>Fonte: Agência Senado · Conorf/Senado</span></div>
+  <div class="foot"><span>Expo Contabilidade e Consultoria</span><span>Fonte: Agência Senado · Conorf/Senado</span></div>
 </section>
 
 <script>
