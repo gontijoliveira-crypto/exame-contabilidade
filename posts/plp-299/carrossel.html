@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Carrossel PLP 299</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  --paper:#FFFFFF; --ink:#0B1F4D; --muted:#4A5677; --line:#D7DCEA;
+  --navy:#0B2A6F; --yellow:#FFCC1A; --accent:#1F56C3; --brass:#8A6400; --cream:#FFF6D1;
+  --display:"Lexend",system-ui,sans-serif; --body:"Nunito Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#e9ecf3;font-family:var(--body);color:var(--ink)}
+.slide{width:1080px;height:1350px;position:relative;overflow:hidden;background:var(--paper);display:flex;flex-direction:column;padding:84px 88px 0;margin:0 auto 40px}
+.slide.dark{background:var(--navy);color:#fff}
+
+/* Logo */
+.logo{display:flex;flex-direction:column;gap:8px}
+.word{display:inline-flex;align-items:baseline;font-family:var(--display);font-weight:600;letter-spacing:-.03em;line-height:1;color:var(--navy);font-size:58px}
+.word svg{height:.66em;width:.66em;margin:0 .05em;transform:translateY(.02em)}
+.sub{font-family:var(--display);font-weight:500;font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.dark .word{color:#fff}
+.dark .sub{color:#B9C3DD}
+
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.count{font-family:var(--display);font-weight:500;font-size:22px;color:var(--muted);letter-spacing:.04em}
+.dark .count{color:#B9C3DD}
+
+.eyebrow{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:60px 0 18px}
+.dark .eyebrow{color:var(--yellow)}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.025em;line-height:1.06;margin:0}
+h2{font-size:64px;color:var(--navy)}
+.dark h2{color:#fff}
+.lead{font-size:31px;line-height:1.45;color:var(--muted);margin:26px 0 0}
+.dark .lead{color:#D7DCEA}
+
+/* Antes / Depois */
+.compare{display:grid;gap:22px;margin-top:42px}
+.card{border-radius:28px;padding:30px 38px;font-size:28px;line-height:1.42}
+.card b{font-weight:800}
+.tag{display:inline-block;font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.14em;text-transform:uppercase;padding:8px 18px;border-radius:40px;margin-bottom:16px}
+.before{background:#F3F5FA;border:2px solid var(--line);color:var(--muted)}
+.before .tag{background:#fff;color:var(--muted);border:2px solid var(--line)}
+.after{background:var(--navy);color:#fff}
+.after .tag{background:var(--yellow);color:var(--navy)}
+.after b{color:var(--yellow)}
+.impact{margin-top:auto;margin-bottom:0;display:flex;gap:22px;align-items:flex-start;background:var(--cream);border-left:10px solid var(--yellow);border-radius:0 22px 22px 0;padding:30px 36px;font-size:29px;line-height:1.42;color:var(--ink)}
+.impact strong{font-family:var(--display);font-weight:700;color:var(--brass);white-space:nowrap}
+
+.foot{height:120px;display:flex;align-items:center;justify-content:space-between;border-top:2px solid var(--line);margin:44px -88px 0;padding:0 88px;font-family:var(--display);font-size:21px;color:var(--muted);letter-spacing:.02em}
+.dark .foot{border-color:rgba(255,255,255,.16);color:#B9C3DD}
+.foot .arrow{color:var(--navy);font-weight:600}
+.dark .foot .arrow{color:var(--yellow)}
+
+/* Capa */
+.cover h1{font-size:112px;color:#fff;margin-top:150px}
+.cover h1 em{font-style:normal;color:var(--yellow)}
+.badge{display:inline-flex;align-items:center;gap:14px;font-family:var(--display);font-weight:600;font-size:26px;color:var(--navy);background:var(--yellow);padding:14px 28px;border-radius:50px;align-self:flex-start}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:auto}
+.stat{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.16);border-radius:26px;padding:30px 34px}
+.stat .n{font-family:var(--display);font-weight:700;font-size:72px;color:var(--yellow);line-height:1}
+.stat .l{font-size:25px;color:#D7DCEA;margin-top:10px;line-height:1.35}
+.deco{position:absolute;right:-140px;top:180px;width:560px;height:560px;opacity:.09}
+
+/* Listas */
+.list{display:grid;gap:20px;margin-top:40px}
+.row{display:flex;gap:26px;align-items:flex-start;border:2px solid var(--line);border-radius:26px;padding:30px 34px}
+.ic{flex:none;width:68px;height:68px;border-radius:18px;background:var(--navy);display:grid;place-items:center;color:var(--yellow);font-family:var(--display);font-weight:700;font-size:30px}
+.row h3{font-family:var(--display);font-weight:600;font-size:34px;margin:0 0 6px;color:var(--navy);letter-spacing:-.01em}
+.row p{margin:0;font-size:27px;line-height:1.42;color:var(--muted)}
+.row p b{color:var(--ink)}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+.mini{border-radius:24px;padding:28px 30px;font-size:26px;line-height:1.4}
+.mini h4{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 12px}
+
+.big{font-family:var(--display);font-weight:700;font-size:132px;color:var(--yellow);line-height:1;letter-spacing:-.04em;margin-top:40px}
+.big small{display:block;font-size:30px;font-weight:500;color:#D7DCEA;letter-spacing:0;line-height:1.35;margin-top:18px}
+.out{margin-top:40px;display:grid;gap:18px}
+.out div{background:rgba(255,255,255,.08);border-radius:22px;padding:26px 32px;font-size:27px;line-height:1.42;color:#E4E8F2}
+.out b{color:var(--yellow)}
+
+.steps{display:grid;gap:0;margin-top:54px;position:relative}
+.step{display:flex;gap:30px;align-items:flex-start;padding-bottom:40px;position:relative}
+.dot{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:24px;background:var(--line);color:var(--muted);position:relative;z-index:1}
+.step.done .dot{background:var(--navy);color:var(--yellow)}
+.step.next .dot{background:var(--yellow);color:var(--navy)}
+.step:not(:last-child)::before{content:"";position:absolute;left:26px;top:54px;bottom:0;width:2px;background:var(--line)}
+.step h3{font-family:var(--display);font-weight:600;font-size:34px;margin:6px 0 4px;color:var(--navy)}
+.step p{margin:0;font-size:26px;color:var(--muted);line-height:1.4}
+.cta{margin-top:auto;background:var(--navy);color:#fff;border-radius:28px;padding:40px 44px;display:flex;justify-content:space-between;align-items:center;gap:30px}
+.cta p{margin:0;font-size:30px;line-height:1.4}
+.cta b{color:var(--yellow)}
+.cta .btn{flex:none;font-family:var(--display);font-weight:600;font-size:24px;background:var(--yellow);color:var(--navy);padding:18px 28px;border-radius:50px}
+</style>
+</head>
+<body>
+
+<template id="logo"><div class="logo"><span class="word" aria-label="exame">e<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#0B2A6F"/><path d="M15 15 L41 41" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>ame</span><span class="sub">Contabilidade e Consultoria</span></div></template>
+<template id="logo-dark"><div class="logo"><span class="word" aria-label="exame">e<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#FFFFFF"/><path d="M15 15 L41 41" stroke="#0B2A6F" stroke-width="7" stroke-linecap="round"/><path d="M13 33 L21 42 L43 14" fill="none" stroke="#FFCC1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>ame</span><span class="sub">Contabilidade e Consultoria</span></div></template>
+
+<!-- 1 CAPA -->
+<section class="slide dark cover">
+  <svg class="deco" viewBox="0 0 56 56"><rect width="56" height="56" rx="14" fill="#fff"/></svg>
+  <div class="top"><div data-logo="dark"></div><span class="count">01/09</span></div>
+  <h1>Ajuste fiscal:<br>o que muda <em>se a Câmara aprovar</em></h1>
+  <p class="lead" style="font-size:34px;margin-top:34px">PLP 299/2026 — o antes e o depois, ponto a ponto, e quem sente o impacto.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">69 × 2</div><div class="l">aprovado no Senado em 18/11, turno final</div></div>
+    <div class="stat"><div class="n">24/11</div><div class="l">votação prevista na Câmara dos Deputados</div></div>
+  </div>
+  <div class="foot"><span>Fonte: Agência Senado · Conorf/Senado</span><span class="arrow">Arraste →</span></div>
+</section>
+
+<!-- 2 LIMITE DE GASTOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">02/09</span></div>
+  <p class="eyebrow">1 · Limite de gastos</p>
+  <h2>O gasto cresce menos quando o caixa aperta</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>Pelo arcabouço fiscal (LC 200/2023), a despesa pode crescer até <b>2,5% acima da inflação</b> por ano.</div>
+    <div class="card after"><span class="tag">Depois</span><br>Nos anos em que houver bloqueio de verbas, o teto cai para <b>2% acima da inflação</b> — só naquele ano, sem rebaixar a base dos anos seguintes.</div>
+  </div>
+  <div class="impact" style="margin-top:44px"><strong>Impacto</strong><span>Freio automático no crescimento da despesa justamente nos anos de aperto.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · art. 1º</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 3 CONTINGENCIAMENTO -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">03/09</span></div>
+  <p class="eyebrow">2 · Bloqueio de verbas</p>
+  <h2>Contingenciamento mais amplo e com mais prestação de contas</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>O governo podia mirar o <b>piso da meta</b>, e as despesas obrigatórias ficavam praticamente fora dos bloqueios.</div>
+    <div class="card after"><span class="tag">Depois</span><br>Pode bloquear mesmo com o resultado <b>dentro da margem de tolerância</b> e, no Executivo, alcançar despesas obrigatórias que dependem de orçamento. Resultado <b>abaixo de 0,5% do PIB</b> exige explicação em audiência na CMO.</div>
+  </div>
+  <div class="impact" style="margin-top:40px"><strong>Impacto</strong><span>Gestão mais rígida e transparente das contas públicas.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · art. 1º (arts. 6º-C a 6º-E da LC 200)</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 4 COMPENSAÇÃO TRIBUTÁRIA -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">04/09</span></div>
+  <p class="eyebrow">3 · Compensação de tributos · atenção, empresas</p>
+  <h2>Usar crédito de um tributo para pagar outro pode ficar limitado</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>Crédito reconhecido de um tributo federal podia quitar débitos de <b>outros</b> tributos administrados pela Receita.</div>
+    <div class="card after"><span class="tag">Depois</span><br>O Executivo pode <b>restringir, por ato próprio,</b> a compensação cruzada. Créditos de <b>PIS/Pasep e Cofins</b> ficam fora da restrição.</div>
+  </div>
+  <div class="impact" style="margin-top:40px"><strong>Impacto</strong><span>Menos caixa no curto prazo e mais planejamento tributário. Tentativa de derrubar o ponto foi rejeitada por 49 × 31.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · art. 6º-F da LC 200 / Lei 9.430/1996</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 5 BENEFÍCIOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">05/09</span></div>
+  <p class="eyebrow">4 · Benefícios tributários</p>
+  <h2>Corte nos incentivos fiscais dobra</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>A LC 224/2025 previa redução de <b>10%</b> dos benefícios fiscais.</div>
+    <div class="card after"><span class="tag">Depois</span><br>Redução de <b>20%</b>. Ficam de fora: <b>CPRB</b> (desoneração da folha), <b>TI e semicondutores</b> e veículos para <b>PcD e TEA</b>.</div>
+  </div>
+  <div class="split">
+    <div class="mini before"><h4>Reidi</h4>Limitado ao valor de 2026 corrigido pelo IPCA.</div>
+    <div class="mini before"><h4>Proex</h4>Equalização limitada a R$ 1 bi/ano até 2030.</div>
+  </div>
+  <div class="impact" style="margin-top:30px"><strong>Impacto</strong><span>Setores incentivados devem revisar margens e planos.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 4º, 9º e 11</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 6 ESTADOS E MUNICÍPIOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">06/09</span></div>
+  <p class="eyebrow">5 · Estados e municípios</p>
+  <h2>Repasses menores no curto prazo</h2>
+  <div class="list">
+    <div class="row"><div class="ic">LK</div><div><h3>Lei Kandir</h3><p>Antes: <b>R$ 4 bi/ano</b>. Depois: piso de <b>R$ 2 bi em 2027</b>, com a diferença paga de <b>2028 a 2030</b> — fruto de acordo no Senado (o texto inicial previa R$ 1 bi).</p></div></div>
+    <div class="row"><div class="ic">CP</div><div><h3>Compensação previdenciária</h3><p>Antes: <b>sem teto anual</b> entre INSS e regimes próprios. Depois: teto de <b>R$ 3 bi/ano</b> de 2027 a 2030. Valores devidos preservados, pagos de forma escalonada.</p></div></div>
+  </div>
+  <div class="impact" style="margin-top:40px"><strong>Impacto</strong><span>Governadores e prefeitos recebem menos agora e precisam replanejar o caixa.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 2º e 6º</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 7 OUTROS PONTOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">07/09</span></div>
+  <p class="eyebrow">6 · Outros pontos</p>
+  <h2>Supersalários, diesel e contratos</h2>
+  <div class="list">
+    <div class="row"><div class="ic">60</div><div><h3>Supersalários</h3><p>Congresso tem <b>60 dias</b> para regulamentar o teto do funcionalismo. A economia vai para segurança pública e investimentos (Executivo) e recomposição de pessoal (demais Poderes).</p></div></div>
+    <div class="row"><div class="ic">⛽</div><div><h3>Diesel em 2026</h3><p>Até <b>R$ 10,5 bi</b> do subsídio ficam fora da meta fiscal, para conter preços diante da guerra no Oriente Médio.</p></div></div>
+    <div class="row"><div class="ic">27</div><div><h3>Obras e contratos</h3><p>Restos a pagar de contratos e convênios plurianuais só podem ser bloqueados ou cancelados <b>após 31/12/2027</b>.</p></div></div>
+  </div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 10, 13 e 14</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 8 IMPACTO -->
+<section class="slide dark">
+  <div class="top"><div data-logo="dark"></div><span class="count">08/09</span></div>
+  <p class="eyebrow">Quanto rende</p>
+  <h2>Melhora estimada no resultado primário de 2027</h2>
+  <div class="big">R$ 45–56 bi<small>segundo o governo · ~R$ 50 bi após ajustes, diz o relator</small></div>
+  <div class="out">
+    <div><b>Ficou de fora:</b> a desvinculação de até 40% do superávit de fundos para a regra de ouro, que abriria ~R$ 100 bi de margem.</div>
+    <div><b>Rejeitado:</b> a proposta da oposição de limitar o gasto a 0,6% acima da inflação e mirar o centro da meta (47 × 30).</div>
+    <div><b>Mercado:</b> vê o pacote como positivo, mas cobra medidas adicionais.</div>
+  </div>
+  <div class="foot" style="margin-top:auto"><span>Estimativas anteriores às últimas mudanças no texto</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 9 PRÓXIMOS PASSOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">09/09</span></div>
+  <p class="eyebrow">Próximos passos</p>
+  <h2>O que ainda falta</h2>
+  <div class="steps">
+    <div class="step done"><div class="dot">✓</div><div><h3>Senado</h3><p>Texto-base 45 × 31 (12/11) · turno final 69 × 2 (18/11)</p></div></div>
+    <div class="step next"><div class="dot">2</div><div><h3>Câmara dos Deputados</h3><p>Votação prevista a partir de 24/11. Se mudar o texto, volta ao Senado.</p></div></div>
+    <div class="step"><div class="dot">3</div><div><h3>Sanção presidencial</h3><p>Depois de aprovado nas duas Casas, vira lei complementar.</p></div></div>
+  </div>
+  <div class="cta"><p>Sua empresa usa <b>compensação tributária</b>? Vale revisar o planejamento antes da regulamentação.</p><span class="btn">Fale com a gente</span></div>
+  <div class="foot"><span>examecontabilidade.com.br</span><span>Fonte: Agência Senado · Conorf/Senado</span></div>
+</section>
+
+<script>
+document.querySelectorAll('[data-logo]').forEach(el=>{
+  const t=document.getElementById(el.dataset.logo==='dark'?'logo-dark':'logo');
+  el.replaceWith(t.content.cloneNode(true));
+});
+</script>
+</body>
+</html>
