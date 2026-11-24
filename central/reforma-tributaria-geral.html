@@ -1,0 +1,480 @@
+<title>Reforma Tributária — Painel Geral</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Painel da Expo Contabilidade com cada mudança da reforma tributária (IBS, CBS, Imposto Seletivo e reforma da renda) e o efeito em cada segmento, com a base legal conferida.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: faixa marinho com filete dourado da Expo; abas fixas (Visão geral, Linha do tempo, Mudanças, Segmentos, Renda e sócios, Glossário, Base legal); segmentos em grade filtrável com ficha completa ao clicar. */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --surface-2:#EAEEF5; --line:#D5DCE8; --ink:#0B1A33; --muted:#4D5B75;
+  --navy:#011433; --navy-2:#0A2550; --gold:#C9962B; --gold-ink:#875F0E; --gold-soft:#FBF2DF;
+  --up:#B4332B; --up-soft:#FBE7E5; --down:#0F7B4B; --down-soft:#DDF3E8; --flat:#45608A; --flat-soft:#E5ECF7; --dep:#8A5A00; --dep-soft:#FFF3D6;
+  --display:"Montserrat","Segoe UI",system-ui,sans-serif; --body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08111F; --surface:#0F1C31; --surface-2:#15263F; --line:#24385A; --ink:#E8EDF6; --muted:#A6B3CB;
+  --navy:#010B1D; --navy-2:#0A1E40; --gold:#DDA944; --gold-ink:#F0C670; --gold-soft:#2A2110;
+  --up:#F08A80; --up-soft:#3A1A18; --down:#5CD18C; --down-soft:#12301F; --flat:#9DB6DD; --flat-soft:#18284A; --dep:#F2C46D; --dep-soft:#2E2410; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08111F; --surface:#0F1C31; --surface-2:#15263F; --line:#24385A; --ink:#E8EDF6; --muted:#A6B3CB;
+  --navy:#010B1D; --navy-2:#0A1E40; --gold:#DDA944; --gold-ink:#F0C670; --gold-soft:#2A2110;
+  --up:#F08A80; --up-soft:#3A1A18; --down:#5CD18C; --down-soft:#12301F; --flat:#9DB6DD; --flat-soft:#18284A; --dep:#F2C46D; --dep-soft:#2E2410; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.58 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance;line-height:1.2}
+p{margin:0}
+a{color:var(--gold-ink)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px}
+.in{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.capa{background:var(--navy);color:#fff;border-bottom:5px solid var(--gold);margin-top:calc(-1*env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+.capa .in{padding-block:30px 26px;display:grid;gap:12px}
+.eyebrow{font:700 11.5px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:#E8B13A}
+.capa h1{font-size:clamp(26px,4.4vw,40px);font-weight:800}
+.capa p{color:#C9D2E6;max-width:72ch}
+.selos{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.selos span{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#E7ECF7;border-radius:999px;padding:3px 12px;font-size:13px}
+nav.abas{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--surface);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+nav.abas .in{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin}
+nav.abas button{border:0;background:none;font:700 14px var(--display);color:var(--muted);padding:13px 14px 11px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.abas button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+main.in{padding-block:26px 70px}
+section[data-v]{display:grid;gap:22px}
+.lead{color:var(--muted);max-width:75ch}
+.h2row{display:grid;gap:6px}
+.h2row h2{font-size:clamp(21px,2.6vw,27px)}
+/* visão geral */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:4px;align-content:start}
+.kpi b{font:800 26px/1.1 var(--display);color:var(--navy-2);font-variant-numeric:tabular-nums}
+:root[data-theme="dark"] .kpi b{color:var(--gold-ink)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kpi b{color:var(--gold-ink)}}
+.kpi span{font-size:13.5px;color:var(--muted)}
+.kpi small{font-size:12px;color:var(--gold-ink);font-weight:700}
+.duas{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
+@media (max-width:860px){.duas{grid-template-columns:minmax(0,1fr)}}
+.bloco{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px;align-content:start;min-width:0}
+.bloco h3{font-size:18px}
+.lista{margin:0;padding-left:20px;display:grid;gap:6px}
+.lista li::marker{color:var(--gold)}
+.trans{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:700 11.5px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+td.n{text-align:center;white-space:nowrap}
+.barra{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--surface-2);min-width:120px}
+.barra i{display:block;height:100%}
+.velho{background:#8C9AB3}.novo{background:var(--gold)}
+.nota{font-size:13px;color:var(--muted)}
+.aviso{background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));border-radius:12px;padding:12px 16px;font-size:14.5px}
+/* linha do tempo */
+.tl{display:grid;gap:0;border-left:3px solid var(--line);margin-left:8px}
+.tl .m{position:relative;padding:4px 0 18px 22px;display:grid;gap:3px}
+.tl .m::before{content:"";position:absolute;left:-9px;top:8px;width:15px;height:15px;border-radius:50%;background:var(--surface);border:3px solid var(--line)}
+.tl .m.ja::before{background:var(--gold);border-color:var(--gold)}
+.tl .m.agora::before{background:var(--up);border-color:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.tl .d{font:800 13px var(--display);color:var(--gold-ink);letter-spacing:.04em}
+.tl h4{font-size:16px}
+.tl p{color:var(--muted);font-size:14.5px;max-width:80ch}
+.tl .b{font-size:12.5px;color:var(--muted)}
+/* filtros e cartões */
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filtros input{flex:1 1 260px;font:15px var(--body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;font:700 13px var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy-2);border-color:var(--navy-2);color:#fff}
+.cont{font-size:13px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:9px;align-content:start;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.card .cat{font:700 11px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-ink)}
+.card h3{font-size:16.5px}
+.card p{font-size:14.3px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:700 11.5px var(--body);border-radius:999px;padding:2px 9px;background:var(--surface-2);color:var(--muted)}
+.t-up{background:var(--up-soft);color:var(--up)}.t-down{background:var(--down-soft);color:var(--down)}.t-flat{background:var(--flat-soft);color:var(--flat)}.t-dep{background:var(--dep-soft);color:var(--dep)}
+.t-vig{background:var(--down-soft);color:var(--down)}.t-tr{background:var(--flat-soft);color:var(--flat)}.t-reg{background:var(--dep-soft);color:var(--dep)}
+@media (prefers-reduced-motion: reduce){.card{transition:none}.card:hover{transform:none}}
+/* ficha */
+.ficha-fundo{position:fixed;inset:0;z-index:20;background:rgba(2,8,20,.55);display:flex;justify-content:flex-end}
+.ficha{background:var(--bg);width:min(760px,100%);height:100%;overflow:auto;padding:0 0 40px;box-shadow:-20px 0 60px rgba(0,0,0,.3)}
+.ficha header{position:sticky;top:0;background:var(--navy);color:#fff;padding:calc(18px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 16px 22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;border-bottom:4px solid var(--gold)}
+.ficha header .cat{color:#E8B13A;font:700 11px var(--display);letter-spacing:.12em;text-transform:uppercase}
+.ficha header h2{font-size:22px;margin-top:4px}
+.ficha header button{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:6px 12px;font:700 14px var(--body);cursor:pointer;align-self:start}
+.ficha .corpo{padding:18px max(20px,env(safe-area-inset-right,0px)) 0 22px;display:grid;gap:16px}
+.ficha h4{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-ink)}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.ab{grid-template-columns:1fr}}
+.ab div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:4px;font-size:14.5px}
+.ab div b{font:700 12px var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pts{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.pts li{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;display:grid;gap:3px;font-size:14.5px}
+.pts li small{color:var(--muted);font-size:12.5px}
+.impacto{border-radius:10px;padding:12px 14px;font-size:14.5px}
+.ex{background:var(--surface-2);border-radius:10px;padding:12px 14px;font-size:14px}
+/* glossário */
+.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.gl div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:4px}
+.gl b{font-family:var(--display);font-size:15px}
+.gl p{font-size:14.3px;color:var(--muted)}
+footer.rod{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer.rod .in{padding-block:18px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+</style>
+
+<header class="capa">
+  <div class="in">
+    <span class="eyebrow">Expo Contabilidade e Consultoria · Central de Projetos</span>
+    <h1>Reforma Tributária: cada mudança e cada segmento</h1>
+    <p>O que muda com o IBS, a CBS e o Imposto Seletivo, o que já vale em 2026, o que começa em 1º de janeiro de 2027 e como cada setor é afetado. Cada regra traz o artigo da lei, conferido no texto oficial compilado do Planalto.</p>
+    <div class="selos"><span>Posição em 24/11/2026</span><span>LC 214/2025 compilada</span><span>Regulamento da CBS (Decreto 12.955/2026)</span><span>LC 227/2026 (Comitê Gestor)</span><span>Lei 15.270/2025 (renda)</span></div>
+  </div>
+</header>
+
+<nav class="abas" aria-label="Seções do painel"><div class="in" role="tablist" id="abas">
+  <button role="tab" data-v="visao" aria-selected="true">Visão geral</button>
+  <button role="tab" data-v="tempo" aria-selected="false">Linha do tempo</button>
+  <button role="tab" data-v="mudancas" aria-selected="false">Mudanças</button>
+  <button role="tab" data-v="segmentos" aria-selected="false">Segmentos</button>
+  <button role="tab" data-v="renda" aria-selected="false">Renda e sócios</button>
+  <button role="tab" data-v="glossario" aria-selected="false">Glossário</button>
+  <button role="tab" data-v="base" aria-selected="false">Base legal</button>
+</div></nav>
+
+<main class="in">
+
+<section data-v="visao">
+  <div class="kpis">
+    <div class="kpi"><small>Ano de teste</small><b>0,9% + 0,1%</b><span>CBS e IBS destacados na nota em 2026, compensados com PIS/Cofins (LC 214, arts. 343, 346 e 348)</span></div>
+    <div class="kpi"><small>Daqui a 38 dias</small><b>1º/1/2027</b><span>CBS cobrada de verdade, fim do PIS e da Cofins, IPI zerado (salvo ZFM) e início do Imposto Seletivo</span></div>
+    <div class="kpi"><small>Transição</small><b>2029 a 2032</b><span>ICMS e ISS caem a 9/10, 8/10, 7/10 e 6/10 da alíquota (ADCT, art. 128). Em 2033 só restam IBS e CBS</span></div>
+    <div class="kpi"><small>Regimes diferenciados</small><b>60% · 30% · zero</b><span>Reduções para saúde, educação, alimentos, agro, profissões regulamentadas e cesta básica (arts. 125, 127 e 128)</span></div>
+  </div>
+
+  <div class="aviso"><b>O que fazer até 31/12/2026:</b> cadastro de produtos e serviços com CST e cClassTrib, ERP calculando CBS e IBS, revisão de preços e contratos para 2027, decisão do Simples (ficar no DAS ou recolher IBS e CBS por fora), inventário dos créditos de PIS/Cofins e plano de caixa para o split payment.</div>
+
+  <div class="duas">
+    <div class="bloco">
+      <h3>Como a carga muda de forma</h3>
+      <p class="lead">Cinco tributos sobre o consumo viram um IVA dual: a CBS (federal) e o IBS (estados e municípios), com a mesma base e as mesmas regras. Ao lado deles, o Imposto Seletivo pesa sobre produtos prejudiciais à saúde e ao meio ambiente.</p>
+      <div class="trans"><table>
+        <thead><tr><th>Sai</th><th>Entra</th><th>Quando</th></tr></thead>
+        <tbody>
+          <tr><td>PIS e Cofins</td><td>CBS</td><td>Extintos em 2027</td></tr>
+          <tr><td>IPI</td><td>Imposto Seletivo (e IPI só para proteger a ZFM)</td><td>Alíquota zero em 2027, salvo produtos com industrialização incentivada na Zona Franca</td></tr>
+          <tr><td>ICMS</td><td>IBS estadual</td><td>Reduzido de 2029 a 2032, extinto em 2033</td></tr>
+          <tr><td>ISS</td><td>IBS municipal</td><td>Reduzido de 2029 a 2032, extinto em 2033</td></tr>
+        </tbody></table></div>
+      <ul class="lista">
+        <li><b>Imposto por fora:</b> o IBS e a CBS não entram na própria base, e o valor aparece separado na nota.</li>
+        <li><b>Crédito amplo:</b> tudo o que a empresa compra gera crédito, menos o que a lei chama de uso ou consumo pessoal (arts. 47 e 57).</li>
+        <li><b>Destino:</b> o imposto vai para o estado e o município de quem compra. Benefício de ICMS deixa de decidir onde instalar a empresa.</li>
+        <li><b>Crédito depende de pagamento:</b> o crédito nasce quando o débito do fornecedor é extinto, inclusive pelo split payment (art. 47).</li>
+      </ul>
+    </div>
+    <div class="bloco">
+      <h3>Peso de cada sistema na transição</h3>
+      <p class="nota">Proporção do ICMS e do ISS antigos que continua valendo em cada ano, e o espaço ocupado pelo IBS. Valores da Constituição (ADCT, art. 128) e da LC 214 (arts. 343 e 344).</p>
+      <div class="trans"><table id="tab-transicao">
+        <thead><tr><th>Ano</th><th>ICMS/ISS</th><th>IBS</th><th></th></tr></thead><tbody></tbody></table></div>
+      <p class="nota">A CBS entra cheia em 2027 (reduzida em 0,1 ponto em 2027 e 2028, art. 347). A alíquota de referência é fixada por resolução do Senado com cálculo do TCU (arts. 349 a 369).</p>
+    </div>
+  </div>
+
+  <div class="duas">
+    <div class="bloco">
+      <h3>Quem tende a pagar mais e quem tende a pagar menos</h3>
+      <p class="nota">Tendência de carga para o segmento em relação ao sistema atual. "Depende" significa que o resultado muda com a margem, o cliente (empresa ou consumidor) e o regime.</p>
+      <div id="resumo-tend" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="bloco">
+      <h3>Atenção para a carteira do escritório</h3>
+      <ul class="lista">
+        <li><b>Transportadoras:</b> saem do ICMS com crédito presumido e do PIS/Cofins para IBS e CBS com crédito de diesel, pneus, manutenção e caminhões. A subcontratação de autônomo gera crédito presumido (art. 169).</li>
+        <li><b>Agro e pecuária:</b> produtor com receita abaixo de R$ 3,6 milhões por ano não é contribuinte (art. 164). Insumos e produtos in natura com redução de 60%.</li>
+        <li><b>Comércio e franquias:</b> fim da substituição tributária com a extinção do ICMS, preço por fora e decisão do Simples.</li>
+        <li><b>Corretora de seguros:</b> corretagem fica no regime específico dos serviços financeiros (LC 214, arts. 181 a 233).</li>
+        <li><b>Concreto e logística:</b> crédito integral de máquinas e caminhões e venda a obras com construtoras no regime de imóveis.</li>
+      </ul>
+      <p class="nota">Abra a aba <b>Segmentos</b> e clique no setor para ver a ficha completa.</p>
+    </div>
+  </div>
+</section>
+
+<section data-v="tempo" hidden>
+  <div class="h2row"><h2>Linha do tempo da reforma</h2><p class="lead">De 2023 a 2033, com o que já aconteceu marcado em dourado e o próximo marco em vermelho.</p></div>
+  <div class="tl" id="tl"></div>
+</section>
+
+<section data-v="mudancas" hidden>
+  <div class="h2row"><h2>As mudanças, uma a uma</h2><p class="lead">Regras que valem para muitos setores. Clique em um cartão para ver antes e depois, os artigos e o que fazer.</p></div>
+  <div class="filtros"><input id="b-mud" type="search" placeholder="Buscar mudança (ex.: split payment, crédito, Simples)" aria-label="Buscar mudança"><div id="f-mud" class="filtros"></div></div>
+  <p class="cont" id="c-mud"></p>
+  <div class="cards" id="g-mud"></div>
+</section>
+
+<section data-v="segmentos" hidden>
+  <div class="h2row"><h2>Segmento por segmento</h2><p class="lead">Como cada setor é tributado hoje, como fica, o que gera crédito, a tendência de carga e o checklist de ações.</p></div>
+  <div class="filtros"><input id="b-seg" type="search" placeholder="Buscar segmento (ex.: transportadora, clínica, supermercado)" aria-label="Buscar segmento"><div id="f-seg" class="filtros"></div></div>
+  <p class="cont" id="c-seg"></p>
+  <div class="cards" id="g-seg"></div>
+</section>
+
+<section data-v="renda" hidden>
+  <div class="h2row"><h2>Renda, dividendos e leis que mexem no bolso do sócio</h2><p class="lead">Fora do IVA, mas no mesmo pacote: a Lei 15.270/2025 mudou o Imposto de Renda a partir de 1º/1/2026, e as leis complementares de 2025 e 2026 alteraram o Lucro Presumido, os benefícios federais, o MEI e o processo tributário.</p></div>
+  <div class="cards" id="g-renda"></div>
+</section>
+
+<section data-v="glossario" hidden>
+  <div class="h2row"><h2>Glossário</h2><p class="lead">Os termos que vão aparecer em nota fiscal, contrato e conversa com o contador.</p></div>
+  <div class="gl" id="gl"></div>
+</section>
+
+<section data-v="base" hidden>
+  <div class="h2row"><h2>Base legal consultada</h2><p class="lead">Textos oficiais compilados do Planalto, lidos em 24/11/2026. Itens que dependem de regulamento ou de ato ainda não publicado estão sinalizados nas fichas.</p></div>
+  <div class="bloco"><div class="trans"><table><thead><tr><th>Ato</th><th>Data</th><th>Do que trata</th></tr></thead><tbody id="normas"></tbody></table></div></div>
+  <div class="bloco"><h3>O que ainda depende de definição</h3><ul class="lista" id="pend"></ul></div>
+  <p class="nota">Este painel é informativo e não substitui a análise do caso concreto. Percentuais de exemplo usam a alíquota ilustrativa de 26,5% (CBS 8,8% e IBS 17,7%), valor de referência de mercado; a alíquota efetiva de cada ano depende de resolução do Senado e das leis de cada ente.</p>
+</section>
+</main>
+
+<footer class="rod"><div class="in"><span>Expo Contabilidade e Consultoria · Painel informativo, posição em 24/11/2026</span><span>Fontes: planalto.gov.br (textos compilados)</span></div></footer>
+
+<div class="ficha-fundo" id="ficha-fundo" hidden><article class="ficha" role="dialog" aria-modal="true" aria-labelledby="f-tit"><header><div><span class="cat" id="f-cat"></span><h2 id="f-tit"></h2></div><button type="button" id="f-fechar">Fechar</button></header><div class="corpo" id="f-corpo"></div></article></div>
+
+<script>
+const ST={v:'Em vigor',t:'Em transição',r:'Aguarda regulamentação'};
+const TEND={up:['Tende a subir','t-up'],down:['Tende a cair','t-down'],flat:['Neutro','t-flat'],dep:['Depende','t-dep']};
+
+const TRANS=[['2026',1,'0,1% (teste)'],['2027',1,'0,1%'],['2028',1,'0,1%'],['2029',.9,'cresce'],['2030',.8,'cresce'],['2031',.7,'cresce'],['2032',.6,'cresce'],['2033',0,'cheio']];
+
+const TL=[
+ ['2023-12','EC 132/2023 promulgada','Cria a CBS, o IBS e o Imposto Seletivo e fixa a transição de 2026 a 2033.','EC 132/2023','ja'],
+ ['2025-01','LC 214/2025 sancionada','Regulamenta o IBS, a CBS e o IS: incidência, créditos, regimes diferenciados e específicos, split payment e transição.','LC 214/2025','ja'],
+ ['2025-11','Lei 15.270/2025','Isenção de IR até R$ 5.000 por mês, retenção de 10% sobre dividendos acima de R$ 50 mil no mês e tributação mínima das altas rendas.','Lei 15.270/2025','ja'],
+ ['2025-12','LC 224/2025','Corte linear de benefícios federais e acréscimo de 10% na presunção do Lucro Presumido sobre a receita acima de R$ 5 milhões.','LC 224/2025, art. 4º, §§ 4º e 5º','ja'],
+ ['2026-01','Ano de teste começa','CBS de 0,9% e IBS de 0,1% destacados na nota, compensados com PIS/Cofins; Simples fora do teste. Começa a valer a retenção de 10% sobre dividendos.','LC 214, arts. 343, 346 e 348; Lei 15.270/2025','ja'],
+ ['2026-01','LC 225/2026 e LC 227/2026','Código de Defesa do Contribuinte e lei do Comitê Gestor do IBS, com processo administrativo do IBS e normas do ITCMD.','LC 225/2026; LC 227/2026','ja'],
+ ['2026-04','Regulamento da CBS','Decreto 12.955/2026 regulamenta a CBS; alterado pelo Decreto 13.075/2026 (julho).','Decreto 12.955/2026','ja'],
+ ['2026-09','LC 236/2026','Normas gerais de solução de controvérsias, consensualidade e processo administrativo no CTN.','LC 236/2026','ja'],
+ ['2026-10','Combustíveis e MEI','Decreto 13.133/2026 delega ao Ministro da Fazenda a divulgação das alíquotas da CBS sobre combustíveis a partir de 2027. LC 238/2026 eleva o limite do MEI para R$ 140 mil a partir de 2028.','Decreto 13.133/2026; LC 238/2026, art. 10','ja'],
+ ['2027-01','CBS de verdade','CBS cobrada (alíquota de referência menos 0,1 ponto), PIS e Cofins extintos, IPI zerado salvo ZFM, Imposto Seletivo começa. IBS segue em 0,1% (0,05% estadual e 0,05% municipal). Redutor de ajuste vinculado a cada imóvel.','LC 214, arts. 344, 347 e 257','agora'],
+ ['2027-12','Primeira declaração do IRPF mínimo','Exercício 2027 (ano-calendário 2026): ajuste da tributação mínima para quem recebeu mais de R$ 600 mil no ano.','Lei 15.270/2025','fut'],
+ ['2028-01','MEI com novo limite','Limite de receita do MEI passa a R$ 140 mil por ano.','LC 238/2026, art. 10, I','fut'],
+ ['2029-01','ICMS e ISS a 90%','Começa a redução gradual: 9/10 em 2029, 8/10 em 2030, 7/10 em 2031 e 6/10 em 2032. Benefícios fiscais caem na mesma proporção. O IBS cresce no espaço aberto.','ADCT, art. 128','fut'],
+ ['2033-01','Sistema novo completo','ICMS e ISS extintos. Restam IBS, CBS e Imposto Seletivo. Saldos credores de ICMS seguem regras próprias de aproveitamento.','EC 132/2023; ADCT','fut'],
+ ['2033','Até 2077: partilha federativa','A distribuição do IBS entre estados e municípios migra da origem para o destino em transição longa, até 2077.','LC 214, arts. 371 e seguintes; LC 227/2026','fut'],
+];
+
+const MUD=[
+ {id:'iva',cat:'Estrutura',st:'t',tit:'IVA dual: CBS, IBS e Imposto Seletivo',res:'PIS, Cofins, IPI, ICMS e ISS são substituídos por dois tributos com a mesma regra: CBS federal e IBS de estados e municípios.',
+  antes:'Cinco tributos com bases, alíquotas, créditos e obrigações diferentes; cumulatividade parcial e guerra fiscal.',depois:'Base ampla sobre bens, serviços e direitos; mesma legislação para CBS e IBS; crédito amplo; cobrança no destino.',
+  pts:[['IBS e CBS incidem sobre operações onerosas com bens e serviços, incluindo direitos e intangíveis.','LC 214/2025, art. 4º'],['Alíquota-padrão de cada ente aplicada por fora; a alíquota de referência é fixada pelo Senado.','LC 214, arts. 14 a 18 e 349 a 369'],['O Imposto Seletivo incide uma vez sobre bens e serviços prejudiciais à saúde ou ao meio ambiente.','LC 214, art. 409']],
+  afeta:['Todas as empresas'],acoes:['Montar comitê interno da reforma com fiscal, comercial, compras e TI','Mapear todos os tributos atuais por produto e serviço']},
+ {id:'teste-2026',cat:'Cronograma',st:'v',tit:'2026, o ano de teste',res:'CBS de 0,9% e IBS de 0,1% aparecem na nota, mas são compensados com PIS/Cofins ou devolvidos. O Simples não entra no teste.',
+  antes:'Só PIS, Cofins, ICMS, ISS e IPI.',depois:'Destaque informativo de CBS e IBS em 2026, com compensação; o ano serve para testar sistemas e documentos.',
+  pts:[['IBS estadual de 0,1% sobre fatos geradores de 2026.','LC 214, art. 343'],['CBS de 0,9% sobre fatos geradores de 2026.','LC 214, art. 346'],['O valor recolhido é compensado com PIS e Cofins; sem débitos suficientes, compensa com outro tributo federal ou é ressarcido em até 60 dias.','LC 214, art. 348, I e II'],['As alíquotas de teste não se aplicam às operações do Simples Nacional.','LC 214, art. 348, III, c']],
+  afeta:['Regime regular (Presumido e Real)'],acoes:['Conferir se as notas de 2026 já trazem os grupos de IBS e CBS','Usar o ano para testar apuração e conciliação']},
+ {id:'2027',cat:'Cronograma',st:'t',tit:'1º de janeiro de 2027: a virada',res:'A CBS passa a ser cobrada de verdade, PIS e Cofins acabam e o IBS segue simbólico até 2028.',
+  antes:'PIS/Cofins cumulativo (3,65%) ou não cumulativo (9,25%).',depois:'CBS na alíquota de referência menos 0,1 ponto em 2027 e 2028; IBS de 0,05% estadual e 0,05% municipal.',
+  pts:[['CBS de 2027 e 2028 é a alíquota de referência reduzida em 0,1 ponto percentual, salvo combustíveis.','LC 214, art. 347'],['IBS de 0,05% estadual e 0,05% municipal em 2027 e 2028.','LC 214, art. 344'],['A redução de 0,1 ponto é proporcional nas operações com alíquota reduzida.','LC 214, art. 347, § 1º, I'],['Alíquotas da CBS sobre combustíveis em 2027 serão divulgadas pelo Ministro da Fazenda.','Decreto 13.133/2026, art. 1º']],
+  afeta:['Todas as empresas do regime regular','Clientes de empresas do Simples'],acoes:['Fechar a tabela de preços de 2027 com CBS por fora','Revisar contratos com virada de ano','Planejar o caixa de janeiro de 2027']},
+ {id:'2029',cat:'Cronograma',st:'t',tit:'2029 a 2033: saída do ICMS e do ISS',res:'ICMS e ISS caem 10% ao ano de 2029 a 2032 e acabam em 2033. Os benefícios fiscais caem junto.',
+  antes:'ICMS com benefícios, substituição tributária e crédito presumido; ISS de 2% a 5%.',depois:'IBS assume o espaço; benefícios de ICMS terminam em 2032.',
+  pts:[['ICMS e ISS a 9/10 em 2029, 8/10 em 2030, 7/10 em 2031 e 6/10 em 2032.','ADCT, art. 128, I a IV'],['Benefícios e incentivos de ICMS e ISS são reduzidos na mesma proporção.','ADCT, art. 128, § 1º'],['Fundo de Compensação de Benefícios Fiscais para quem tem benefício oneroso de ICMS, com habilitação na Receita.','LC 214, arts. 384 a 405']],
+  afeta:['Indústria e comércio com benefício de ICMS','Empresas com crédito presumido de ICMS'],acoes:['Listar benefícios de ICMS e prazos','Avaliar habilitação ao Fundo de Compensação','Reavaliar a localização de centros de distribuição']},
+ {id:'aliquota',cat:'Alíquotas',st:'r',tit:'Alíquota de referência e alíquota de cada ente',res:'O Senado fixa a alíquota de referência com base em cálculo do TCU. Cada estado e município pode fixar a sua por lei; sem lei, vale a de referência.',
+  antes:'Cada estado com suas alíquotas de ICMS por produto; cada município com seu ISS.',depois:'Uma alíquota por ente, igual para todos os bens e serviços, com reduções definidas em lei complementar.',
+  pts:[['Regras de cálculo das alíquotas de referência de 2027 a 2035.','LC 214, arts. 349 a 366'],['Limite para as alíquotas de referência em 2030 e 2035, com revisão de benefícios se o teto for superado.','LC 214, arts. 367 a 369'],['Redutor sobre as alíquotas nas compras da administração pública.','LC 214, art. 370']],
+  afeta:['Todas as empresas'],acoes:['Usar alíquota parametrizável no ERP (não fixa no código)','Acompanhar a resolução do Senado para 2027']},
+ {id:'credito',cat:'Créditos',st:'t',tit:'Crédito amplo e condicionado ao pagamento',res:'Quase tudo o que a empresa compra gera crédito, mas o crédito só nasce quando o tributo do fornecedor é pago.',
+  antes:'PIS/Cofins com conceito de insumo restrito; ICMS sem crédito de uso e consumo; ISS sem crédito.',depois:'Crédito de todos os bens e serviços, salvo uso e consumo pessoal; IBS e CBS apurados em separado.',
+  pts:[['Crédito apropriado quando o débito da operação de compra é extinto, por qualquer modalidade.','LC 214, art. 47'],['Não há compensação cruzada: crédito de IBS só abate IBS, e de CBS só abate CBS.','LC 214, art. 47, § 1º, I'],['O crédito exige documento fiscal eletrônico idôneo.','LC 214, art. 47, § 1º, II'],['Joias, bebidas, armas, bens de lazer e outros itens listados são de uso ou consumo pessoal e não dão crédito.','LC 214, art. 57'],['Compra de optante do Simples dá crédito igual ao valor pago pelo fornecedor no regime.','LC 214, art. 47 (compras de optante do Simples)']],
+  afeta:['Regime regular'],acoes:['Classificar fornecedores por regime e crédito que geram','Rever política de compras e benefícios a empregados','Garantir documento fiscal eletrônico em todas as compras']},
+ {id:'split',cat:'Pagamento',st:'r',tit:'Split payment: o imposto separado no pagamento',res:'Bancos e credenciadoras separam o IBS e a CBS no momento da liquidação do pagamento e repassam ao fisco.',
+  antes:'A empresa recebe o valor cheio e recolhe o imposto depois, pela guia.',depois:'Parte do valor recebido vai direto ao fisco; o caixa da empresa muda.',
+  pts:[['Prestadores de pagamento eletrônico segregam e recolhem IBS e CBS na liquidação financeira.','LC 214, art. 31'],['Há um procedimento padrão e um simplificado, este para vendas a quem não é contribuinte do regime regular.','LC 214, arts. 32 e 33'],['A implantação é gradual e depende de regulamento e dos sistemas do fisco e do sistema financeiro.','LC 214, art. 31 e regulamento']],
+  afeta:['Varejo, serviços e todo negócio que recebe por meio eletrônico'],acoes:['Simular o capital de giro sem o imposto embutido no recebimento','Negociar prazos com fornecedores','Acompanhar o cronograma de implantação']},
+ {id:'ressarc',cat:'Créditos',st:'v',tit:'Ressarcimento do saldo credor',res:'Saldo de crédito acumulado pode ser devolvido em dinheiro, com prazo na lei.',
+  antes:'Saldo credor de ICMS e PIS/Cofins acumulado por anos, com devolução lenta.',depois:'Pedido de ressarcimento com prazos de 30, 60 ou 180 dias, mais 15 dias para pagar se o fisco não se manifestar.',
+  pts:[['Até 30 dias para empresas em programas de conformidade.','LC 214, art. 39, § 3º, I'],['Até 60 dias para pedidos que atendem ao art. 40.','LC 214, art. 39, § 3º, II'],['Até 180 dias nos demais casos.','LC 214, art. 39, § 3º, III'],['Sem manifestação no prazo, o crédito é pago em 15 dias.','LC 214, art. 39, § 4º']],
+  afeta:['Exportadores','Investidores em bens de capital','Empresas com vendas com alíquota reduzida'],acoes:['Projetar saldo credor por mês','Entrar em programas de conformidade da Receita e do Comitê Gestor']},
+ {id:'apuracao',cat:'Pagamento',st:'r',tit:'Apuração mensal e centralizada',res:'Uma apuração por CNPJ, consolidando todos os estabelecimentos, com pagamento centralizado.',
+  antes:'Apuração por estabelecimento no ICMS e por município no ISS.',depois:'Apuração mensal consolidada, em separado para IBS e CBS; prazo e vencimento no regulamento.',
+  pts:[['Apuração consolida as operações de todos os estabelecimentos.','LC 214, art. 42'],['Pagamento e ressarcimento centralizados em um estabelecimento.','LC 214, art. 42, § 1º'],['Período de apuração mensal.','LC 214, art. 43'],['Regulamento define prazo de apuração e vencimento.','LC 214, art. 44']],
+  afeta:['Empresas com várias filiais'],acoes:['Unificar cadastro de filiais no ERP','Definir responsável pela apuração centralizada']},
+ {id:'reducoes',cat:'Alíquotas',st:'v',tit:'Reduções de 60%, 30% e alíquota zero',res:'A lei lista os bens e serviços com alíquota reduzida. Fora da lista, vale a alíquota cheia.',
+  antes:'Benefícios espalhados em leis, convênios e decretos de cada ente.',depois:'Lista fechada na lei complementar, com anexos por NCM e NBS.',
+  pts:[['Redução de 60%: educação, saúde, dispositivos médicos e de acessibilidade, medicamentos, alimentos, higiene e limpeza de baixa renda, produtos agropecuários in natura, insumos agropecuários, cultura e eventos, comunicação institucional, desporto e segurança nacional.','LC 214, art. 128, I a XIII'],['Redução de 30% para 18 profissões intelectuais regulamentadas, como administradores, advogados, arquitetos, contadores, engenheiros e outras.','LC 214, art. 127'],['Alíquota zero para a cesta básica nacional (Anexo I).','LC 214, art. 125'],['Alíquota zero para hortícolas, frutas e ovos, alguns medicamentos e dispositivos, produtos de saúde menstrual e veículos para PcD e taxistas.','LC 214, arts. 143 a 156'],['Reabilitação urbana de zonas históricas com redução de 60%.','LC 214, art. 158']],
+  afeta:['Saúde, educação, alimentos, agro, profissões regulamentadas'],acoes:['Conferir NCM e NBS de cada item contra os anexos','Parametrizar cClassTrib correto na nota']},
+ {id:'cashback',cat:'Social',st:'r',tit:'Cashback para famílias de baixa renda',res:'Parte do imposto pago por famílias inscritas no CadÚnico volta em dinheiro.',
+  antes:'Não existia devolução de tributo sobre consumo.',depois:'Devolução de 100% da CBS e 20% do IBS em gás de cozinha, energia, água, esgoto e gás canalizado; 20% nos demais casos.',
+  pts:[['100% da CBS e 20% do IBS no botijão de até 13 kg, energia elétrica, água, esgoto e gás canalizado.','LC 214, art. 118, I'],['20% da CBS e do IBS nos demais casos.','LC 214, art. 118, II'],['Entes podem fixar percentuais maiores por lei própria, salvo a CBS do inciso I.','LC 214, art. 118, §§ 1º e 3º']],
+  afeta:['Varejo de bairro','Concessionárias de energia, água e gás'],acoes:['Varejo: informar CPF do consumidor na NFC-e quando solicitado']},
+ {id:'especificos',cat:'Regimes específicos',st:'t',tit:'Regimes específicos',res:'Alguns setores têm base, alíquota ou crédito próprios.',
+  antes:'Tributação setorial em leis esparsas.',depois:'Capítulos próprios na LC 214 para cada setor.',
+  pts:[['Combustíveis: incidência única (monofásica) com alíquota por unidade de medida.','LC 214, arts. 172 a 180'],['Serviços financeiros, seguros e ativos virtuais.','LC 214, arts. 181 a 233'],['Planos de assistência à saúde.','LC 214, arts. 234 a 243'],['Concursos de prognósticos e apostas.','LC 214, arts. 244 a 250'],['Bens imóveis: redução de 50%, e de 70% na locação.','LC 214, art. 261'],['Cooperativas: regime opcional com alíquota zero no ato cooperativo.','LC 214, arts. 271 e 272'],['Bares e restaurantes, hotelaria e parques: redução de 40%.','LC 214, arts. 275 e 281'],['Transporte intermunicipal e interestadual de passageiros e aéreo regional: redução de 40%.','LC 214, arts. 286 e 287'],['Agências de turismo: base é a margem.','LC 214, art. 289'],['SAF: regime de Tributação Específica do Futebol.','LC 214, art. 293']],
+  afeta:['Setores listados'],acoes:['Confirmar se a atividade cai em regime específico antes de precificar']},
+ {id:'is',cat:'Estrutura',st:'t',tit:'Imposto Seletivo',res:'Novo imposto federal a partir de 2027 sobre produtos prejudiciais à saúde ou ao meio ambiente.',
+  antes:'IPI com alíquotas altas em fumo, bebidas e veículos.',depois:'IS incide uma vez, na produção, extração ou importação; não incide na exportação.',
+  pts:[['Incide sobre veículos, embarcações e aeronaves, produtos fumígenos, bebidas alcoólicas, bebidas açucaradas, bens minerais e concursos de prognósticos e fantasy sport.','LC 214, art. 409, § 1º e Anexo XVII'],['Normas de fato gerador, não incidência, base e alíquotas.','LC 214, arts. 412 a 438'],['As alíquotas são fixadas em lei ordinária.','LC 214, art. 419']],
+  afeta:['Indústria de bebidas, fumo, veículos, mineração'],acoes:['Acompanhar a lei ordinária das alíquotas do IS','Simular preço de 2027 com IS e CBS']},
+ {id:'simples',cat:'Pequenos negócios',st:'t',tit:'Simples Nacional na reforma',res:'O Simples continua, com IBS e CBS dentro do DAS. A empresa pode escolher recolher IBS e CBS por fora para dar crédito cheio ao cliente.',
+  antes:'DAS com PIS, Cofins, ICMS e ISS; cliente do regime não cumulativo toma crédito limitado.',depois:'DAS com CBS e IBS no lugar desses tributos, ou opção pelo regime regular só para IBS e CBS.',
+  pts:[['Optante do Simples fica sujeito às regras do regime.','LC 214, art. 41, § 2º'],['Pode optar por apurar e recolher IBS e CBS pelo regime regular.','LC 214, art. 41, §§ 3º e 4º'],['Quem recebeu ressarcimento no ano corrente ou anterior não pode sair do regime regular.','LC 214, art. 41, § 5º'],['O cliente toma crédito igual ao valor pago dentro do Simples.','LC 214, art. 47 (compras de optante do Simples)'],['Sublimite de R$ 3,6 milhões para o IBS no Simples.','LC 123/2006, art. 13-A']],
+  afeta:['ME e EPP do Simples'],acoes:['Medir quanto da receita vem de clientes empresas','Simular DAS puro x IBS e CBS por fora antes do prazo de opção']},
+ {id:'nao-contrib',cat:'Pequenos negócios',st:'v',tit:'Quem não é contribuinte',res:'Produtor rural pequeno, transportador autônomo pessoa física, nanoempreendedor e MEI têm tratamento próprio.',
+  antes:'Produtor rural e autônomo fora do PIS/Cofins, mas sujeitos ao ICMS em muitas operações.',depois:'Não pagam IBS e CBS; quem compra deles pode ter crédito presumido.',
+  pts:[['Produtor rural com receita abaixo de R$ 3,6 milhões no ano e produtor integrado não são contribuintes.','LC 214, art. 164'],['Crédito presumido para quem contrata transportador autônomo de carga pessoa física.','LC 214, art. 169'],['Nanoempreendedor: pessoa física com receita abaixo de 50% do limite do MEI, sem aderir ao MEI.','LC 214, art. 26, IV'],['Para motorista e entregador de aplicativo, conta como receita 25% do valor bruto recebido.','LC 214, art. 26, § 10'],['Crédito presumido também na compra de resíduos para reciclagem e de bens usados de pessoa física.','LC 214, arts. 170 e 171']],
+  afeta:['Agro, transporte, aplicativos, reciclagem, revenda de usados'],acoes:['Cadastrar fornecedores não contribuintes e o crédito presumido de cada compra']},
+ {id:'saldos',cat:'Créditos',st:'t',tit:'Créditos antigos: PIS/Cofins, ICMS e bens de capital',res:'O saldo de PIS/Cofins não se perde com a extinção; tem regras próprias de uso.',
+  antes:'Créditos acumulados e não utilizados.',depois:'Créditos de PIS/Cofins seguem válidos para compensação e ressarcimento; bens usados comprados até 2032 têm regra de transição.',
+  pts:[['Créditos de PIS/Cofins não usados até a extinção continuam válidos, mantido o prazo de uso.','LC 214, art. 378'],['Formas de compensação e ressarcimento do saldo de PIS/Cofins.','LC 214, arts. 378 a 383'],['Venda de máquinas, veículos e equipamentos usados comprados até 31/12/2032 tem regra própria.','LC 214, arts. 406 e 407']],
+  afeta:['Lucro Real','Empresas com ativo imobilizado relevante'],acoes:['Inventariar e documentar créditos de PIS/Cofins até dezembro de 2026','Planejar o uso do saldo a partir de 2027']},
+ {id:'governo',cat:'Contratos',st:'t',tit:'Contratos com o poder público e compras governamentais',res:'Contratos administrativos podem ser reequilibrados pela mudança da carga; nas compras públicas o imposto vai para o ente comprador.',
+  antes:'Reequilíbrio pela regra geral da Lei de Licitações.',depois:'Procedimento próprio de reequilíbrio pela reforma; redutor de alíquota nas compras do governo.',
+  pts:[['Reequilíbrio dos contratos administrativos afetados pela reforma.','LC 214, arts. 373 a 377'],['Redutor sobre as alíquotas nas operações contratadas pela administração pública.','LC 214, art. 370'],['Regras de transição das compras governamentais.','LC 214, art. 372']],
+  afeta:['Fornecedores de governo','Concessionárias'],acoes:['Levantar contratos públicos vigentes em 2027','Preparar memória de cálculo para pedido de reequilíbrio']},
+ {id:'docs',cat:'Documentos fiscais',st:'t',tit:'Nota fiscal, cadastro e regulamento da CBS',res:'Todos os documentos fiscais eletrônicos ganham campos de IBS, CBS e IS; a CBS já tem regulamento.',
+  antes:'NF-e, NFS-e municipais diferentes, CT-e e SPED com regras de cada tributo.',depois:'Campos de IBS, CBS e IS com CST e cClassTrib; NFS-e nacional; apuração com base nos documentos.',
+  pts:[['Regulamento da CBS publicado.','Decreto 12.955/2026, alterado pelo Decreto 13.075/2026'],['Inscrição no CNPJ obrigatória para fins de CBS e IBS em casos listados, com efeitos a partir de 1º/1/2027.','Decreto 12.955/2026, § 4º-A incluído pelo Decreto 13.075/2026'],['Comitê Gestor do IBS instituído, com processo administrativo do IBS.','LC 227/2026, art. 1º'],['Domicílio tributário eletrônico e fiscalização integrada.','LC 214, arts. 324 a 341']],
+  afeta:['Todas as empresas'],acoes:['Validar com o fornecedor do ERP a versão dos leiautes de NF-e, NFC-e, CT-e e NFS-e','Testar emissão com cClassTrib em homologação']},
+];
+
+const SEG=[
+ // Transporte
+ {g:'Transporte',n:'Transportadora de cargas',enq:'Regra geral',t:'dep',res:'Sai do ICMS com crédito presumido e do PIS/Cofins para IBS e CBS na alíquota cheia, com crédito amplo de diesel, pneus, peças, manutenção, pedágio e caminhões.',hoje:'ICMS de 12% interestadual (muitos usam crédito presumido de 20% do Convênio 106/96) e PIS/Cofins cumulativo (3,65%) ou não cumulativo (9,25%). ISS no frete municipal.',novo:'IBS e CBS na alíquota cheia, com crédito integral dos insumos e do caminhão; o cliente contribuinte toma crédito do frete.',
+  cred:['Diesel e lubrificantes (crédito do valor da CBS e do IBS monofásicos)','Pneus, peças, manutenção, rastreamento, seguros e pedágio','Caminhões e implementos com crédito integral','Subcontratação de autônomo: crédito presumido (art. 169)','Folha de motoristas não gera crédito'],
+  imp:'Para quem atende indústria e agro contribuintes, o frete fica mais neutro, porque o cliente se credita. A carga própria depende da folha: quanto maior o peso de salários, menos crédito e maior a conta.',
+  ops:['Crédito imediato na compra de caminhões','Contratar autônomo com crédito presumido','Frete deixa de ser custo para o cliente contribuinte'],riscos:['Perda do crédito presumido de ICMS de 2029 a 2032','Subcontratação de transportadora do Simples gera crédito limitado'],
+  acoes:['Simular frete de 2027 com CBS','Revisar tabela de frete por cliente (contribuinte ou não)','Cadastrar TAC no ERP para o crédito presumido','Verificar CT-e com grupos de IBS e CBS'],base:[['Crédito presumido na contratação de autônomo','LC 214, art. 169'],['Crédito sobre combustíveis monofásicos','LC 214, art. 180'],['Crédito condicionado ao pagamento','LC 214, art. 47']],
+  ex:'Ilustrativo com alíquota de 26,5%: frete de R$ 10.000 sem imposto passa a ter R$ 2.650 de IBS e CBS por fora. Se a transportadora comprou R$ 4.000 de diesel, pneus e manutenção com imposto embutido, toma cerca de R$ 840 de crédito e recolhe a diferença. O cliente contribuinte se credita dos R$ 2.650.'},
+ {g:'Transporte',n:'Transportador autônomo (TAC)',enq:'Não contribuinte (pessoa física)',t:'down',res:'O autônomo pessoa física não é contribuinte. Quem o contrata pode tomar crédito presumido, o que mantém o autônomo competitivo.',hoje:'Retenções de INSS e IR; ICMS no frete em muitos estados.',novo:'Fora do IBS e da CBS; o contratante do regime regular apropria crédito presumido.',
+  cred:['Contratante toma crédito presumido sobre o frete pago'],imp:'Sem IBS e CBS sobre o frete do autônomo; a vantagem depende do percentual do crédito presumido fixado.',ops:['Demanda maior de transportadoras do regime regular'],riscos:['Se virar MEI, cuidar do limite de receita e do enquadramento'],acoes:['Manter cadastro e documento fiscal do frete em dia'],base:[['Crédito presumido para o contratante','LC 214, art. 169']]},
+ {g:'Transporte',n:'Transporte coletivo urbano e metropolitano',enq:'Isenção',t:'down',res:'O transporte público coletivo rodoviário e metroviário urbano, semiurbano e metropolitano é isento de IBS e CBS.',hoje:'ISS reduzido ou isento em muitos municípios e PIS/Cofins com desonerações.',novo:'Isento. Ferroviário e hidroviário urbano têm redução de 100%, sem crédito.',
+  cred:['Isenção: sem débito; crédito nas compras não é mantido em regra'],imp:'Carga sobre a tarifa cai, mas os insumos ficam com imposto embutido.',ops:['Tarifa sem tributo sobre consumo'],riscos:['Custo de insumos sem crédito'],acoes:['Confirmar o enquadramento sob concessão ou permissão'],base:[['Isenção do transporte público coletivo urbano','LC 214, art. 157'],['Ferroviário e hidroviário urbano','LC 214, art. 285']]},
+ {g:'Transporte',n:'Transporte de passageiros intermunicipal e interestadual',enq:'Regime específico: redução de 40%',t:'dep',res:'Rodoviário, ferroviário e hidroviário intermunicipal e interestadual têm alíquota reduzida em 40%, com crédito nas compras.',hoje:'ICMS e PIS/Cofins.',novo:'IBS e CBS com 40% de redução e crédito amplo.',
+  cred:['Ônibus, combustível, pneus e manutenção geram crédito'],imp:'Passageiro é consumidor final, sem crédito; o resultado depende do ICMS atual de cada estado.',ops:['Crédito de frota'],riscos:['Repasse ao preço da passagem'],acoes:['Simular tarifa de 2027'],base:[['Redução de 40%','LC 214, art. 286'],['Aéreo regional com 40%','LC 214, art. 287']]},
+ {g:'Transporte',n:'Distribuidoras e postos de combustíveis',enq:'Regime específico: monofásico',t:'flat',res:'IBS e CBS cobrados uma única vez, com valor fixo por litro, no produtor ou importador. A revenda não recolhe de novo.',hoje:'ICMS monofásico por litro e PIS/Cofins concentrados.',novo:'Monofásico também na CBS e no IBS; alíquotas por unidade divulgadas pelo Ministro da Fazenda (CBS) a partir de 2027.',
+  cred:['Comprador contribuinte (transportadora, indústria) toma crédito do valor cobrado'],imp:'Para o posto, a lógica se parece com o monofásico atual. Para clientes empresas, o diesel passa a gerar crédito pleno.',ops:['Venda a frotistas com crédito'],riscos:['Estoques na virada de ano','Etanol anidro tem regra própria'],acoes:['Conferir alíquota divulgada para 2027','Ajustar notas com o grupo monofásico'],base:[['Incidência única','LC 214, art. 172'],['Créditos na aquisição','LC 214, art. 180'],['Delegação das alíquotas da CBS','Decreto 13.133/2026, art. 1º']]},
+ {g:'Transporte',n:'Operador logístico e armazéns',enq:'Regra geral',t:'dep',res:'Armazenagem, movimentação e gestão de estoque ficam na regra geral, com crédito amplo.',hoje:'ISS de 2% a 5% e PIS/Cofins.',novo:'IBS e CBS cheios; cliente contribuinte se credita.',cred:['Equipamentos, aluguel de galpão, energia e sistemas'],imp:'Neutro para clientes contribuintes; pesa se o serviço for muito intensivo em mão de obra.',ops:['Galpão próprio com crédito na construção'],riscos:['Folha sem crédito'],acoes:['Separar contratos por tipo de serviço'],base:[['Crédito amplo','LC 214, art. 47']]},
+ // Agro
+ {g:'Agro e alimentos',n:'Produtor rural até R$ 3,6 milhões',enq:'Não contribuinte (opcional)',t:'down',res:'Produtor pessoa física ou jurídica com receita abaixo de R$ 3,6 milhões no ano não é contribuinte. Quem compra dele pode ter crédito presumido.',hoje:'Funrural, ICMS com diferimento ou isenção, IR do produtor.',novo:'Fora do IBS e da CBS, salvo opção. Funrural, ITR e IR continuam.',
+  cred:['Não toma crédito (não é contribuinte)','O comprador contribuinte pode ter crédito presumido'],imp:'Sem imposto novo na venda; insumos com redução de 60% ficam mais baratos.',ops:['Avaliar opção de ser contribuinte se vende para agroindústria e tem muito insumo'],riscos:['Passar do limite torna contribuinte no ano seguinte'],acoes:['Acompanhar a receita anual','Simular a opção pelo regime regular'],base:[['Não contribuinte abaixo de R$ 3,6 milhões','LC 214, art. 164'],['Insumos agropecuários com 60%','LC 214, art. 138']]},
+ {g:'Agro e alimentos',n:'Produtor rural contribuinte e pecuária',enq:'Regime diferenciado: redução de 60%',t:'down',res:'Acima do limite, o produtor é contribuinte. Produtos in natura e insumos têm redução de 60%; crédito amplo de máquinas e insumos.',hoje:'ICMS diferido e PIS/Cofins com suspensões.',novo:'IBS e CBS com redução de 60% na venda in natura e nos insumos; crédito de máquinas e implementos.',
+  cred:['Fertilizantes, sementes, rações, defensivos, vacinas','Máquinas, tratores e implementos'],imp:'Carga baixa na venda e crédito amplo; exportação imune com manutenção de créditos.',ops:['Ressarcimento de saldo credor','Exportação imune'],riscos:['Obrigações acessórias novas para pessoa física'],acoes:['Inscrição no cadastro e emissão de nota','Controle de crédito por insumo'],base:[['Produtos in natura com 60%','LC 214, art. 137'],['Insumos com 60%','LC 214, art. 138']]},
+ {g:'Agro e alimentos',n:'Frigoríficos, laticínios e indústria de alimentos',enq:'Alíquota zero ou redução de 60%',t:'down',res:'Carnes, leite, queijos e outros itens da cesta básica têm alíquota zero; outros alimentos, redução de 60%.',hoje:'ICMS com benefícios e PIS/Cofins zerado em parte da cesta.',novo:'Cesta básica nacional (Anexo I) com alíquota zero; alimentos do anexo de 60%.',
+  cred:['Mantém crédito nas compras mesmo com venda a alíquota zero'],imp:'Carga cai para a cesta; para os demais alimentos, depende do ICMS atual.',ops:['Saldo credor ressarcível'],riscos:['Classificação correta por NCM'],acoes:['Conferir NCM de cada produto com os anexos'],base:[['Cesta básica nacional','LC 214, art. 125'],['Alimentos com 60%','LC 214, art. 135']]},
+ {g:'Agro e alimentos',n:'Cooperativas agropecuárias',enq:'Regime específico (opcional)',t:'down',res:'Cooperativa pode optar por regime específico com alíquota zero no ato cooperativo e transferência de créditos.',hoje:'Ato cooperativo fora do PIS/Cofins em parte.',novo:'Alíquota zero nas operações com associados, com regras de crédito.',cred:['Associado do regime regular pode transferir créditos'],imp:'Mantém a neutralidade do ato cooperativo.',ops:['Repasse de créditos ao associado'],riscos:['Opção mal feita'],acoes:['Avaliar a opção pelo regime específico'],base:[['Regime das cooperativas','LC 214, arts. 271 e 272']]},
+ {g:'Agro e alimentos',n:'Supermercados e atacarejo',enq:'Regra geral com itens reduzidos',t:'dep',res:'Mix de produtos com alíquota zero, redução de 60% e alíquota cheia. Fim da substituição tributária com a extinção do ICMS.',hoje:'ICMS com muita substituição tributária e PIS/Cofins monofásico em vários itens.',novo:'Cada item com seu cClassTrib; crédito das compras; split payment nas vendas no cartão.',cred:['Mercadorias para revenda, energia, aluguel e equipamentos'],imp:'Depende do mix: cesta básica fica mais barata, demais itens tendem a manter a carga.',ops:['Cashback ao consumidor de baixa renda'],riscos:['Cadastro de milhares de itens','Caixa com split payment'],acoes:['Saneamento fiscal do cadastro de produtos','Testar NFC-e com IBS e CBS'],base:[['Cesta básica com alíquota zero','LC 214, art. 125'],['Split payment','LC 214, art. 31']]},
+ // Indústria e comércio
+ {g:'Indústria',n:'Indústria em geral',enq:'Regra geral',t:'dep',res:'Fim do IPI (salvo ZFM), crédito amplo e imediato de bens de capital e cobrança no destino.',hoje:'IPI, ICMS com benefícios, PIS/Cofins não cumulativo.',novo:'IBS e CBS cheios com crédito de tudo; Imposto Seletivo para produtos específicos.',cred:['Matérias-primas, energia, embalagens, serviços, máquinas'],imp:'Cadeia longa ganha com crédito pleno; perde quem depende de benefício de ICMS.',ops:['Crédito de investimento','Exportação desonerada'],riscos:['Fim dos benefícios de ICMS até 2032'],acoes:['Mapear benefícios de ICMS','Avaliar Fundo de Compensação'],base:[['Desoneração de bens de capital','LC 214, arts. 105 a 111'],['Fundo de Compensação de Benefícios','LC 214, arts. 384 a 405']]},
+ {g:'Indústria',n:'Concreto, cimento e materiais de construção',enq:'Regra geral',t:'dep',res:'Venda de concreto e materiais na regra geral. Quando o cliente é construtora no regime de imóveis, ela se credita.',hoje:'ICMS, IPI e PIS/Cofins; serviço de concretagem com ISS em alguns casos.',novo:'IBS e CBS cheios na venda; cliente contribuinte toma crédito.',cred:['Cimento, agregados, aditivos, diesel e caminhões-betoneira'],imp:'Neutro para construtoras contribuintes; pessoa física em obra própria paga o imposto embutido.',ops:['Crédito de betoneiras e usina'],riscos:['Separar fornecimento de material e serviço'],acoes:['Revisar contratos de fornecimento com obras'],base:[['Regime de imóveis da construtora','LC 214, arts. 251 a 270']]},
+ {g:'Indústria',n:'Bebidas, fumo, veículos e mineração',enq:'Regra geral + Imposto Seletivo',t:'up',res:'Além do IBS e da CBS, incide o Imposto Seletivo a partir de 2027.',hoje:'IPI alto, ICMS e PIS/Cofins monofásico em parte.',novo:'IBS e CBS mais IS, cobrado uma vez.',cred:['IS não gera crédito na cadeia'],imp:'Tende a subir para bebidas açucaradas e alcoólicas, fumo e alguns veículos; mineração tem teto no IS.',ops:[],riscos:['Lei das alíquotas do IS'],acoes:['Simular preço com IS'],base:[['Imposto Seletivo','LC 214, art. 409']]},
+ {g:'Indústria',n:'Empresas da Zona Franca de Manaus',enq:'Regime favorecido',t:'down',res:'O diferencial da ZFM é mantido com créditos presumidos de IBS e CBS e IPI preservado para produtos incentivados.',hoje:'Isenções de IPI, ICMS e PIS/Cofins.',novo:'Créditos presumidos e reduções específicas.',cred:['Créditos presumidos próprios'],imp:'Vantagem mantida.',ops:['Diferencial competitivo'],riscos:['Regras de habilitação'],acoes:['Conferir produtos incentivados'],base:[['Zona Franca de Manaus e ALC','LC 214, arts. 439 a 470']]},
+ {g:'Comércio',n:'Comércio varejista',enq:'Regra geral',t:'dep',res:'Venda ao consumidor final na alíquota cheia (ou reduzida conforme o item), com crédito das compras e split payment.',hoje:'ICMS com substituição tributária, PIS/Cofins cumulativo ou não cumulativo.',novo:'IBS e CBS por fora em cada item; crédito da mercadoria e despesas.',cred:['Mercadorias, aluguel, energia, marketing, fretes'],imp:'Quem estava no Presumido com PIS/Cofins cumulativo tende a sentir aumento se a margem for alta.',ops:['Crédito de aluguel e serviços'],riscos:['Caixa no split payment','Preço com imposto visível'],acoes:['Recalcular margem com imposto por fora','Revisar regime: Simples, Presumido ou Real'],base:[['Split payment simplificado','LC 214, art. 33']]},
+ {g:'Comércio',n:'Atacado e distribuição',enq:'Regra geral',t:'flat',res:'Venda a contribuintes: o imposto passa pela cadeia e o cliente se credita.',hoje:'ICMS com ST e benefícios para centros de distribuição.',novo:'Cobrança no destino; benefício de ICMS perde força até 2032.',cred:['Mercadorias e logística'],imp:'Neutro na cadeia; perde quem dependia de benefício para se instalar.',ops:['Logística pensada em custo, não em benefício'],riscos:['Fim do benefício'],acoes:['Rever localização de CDs'],base:[['Redução de benefícios','ADCT, art. 128, § 1º']]},
+ {g:'Comércio',n:'Franquias',enq:'Regra geral',t:'dep',res:'Royalties e taxas de franquia passam a ter IBS e CBS (cessão de direitos). Franqueado contribuinte se credita.',hoje:'ISS sobre royalties em muitos municípios e PIS/Cofins.',novo:'IBS e CBS sobre royalties, taxas e mercadorias.',cred:['Franqueado do regime regular toma crédito dos royalties'],imp:'Franqueado do Simples toma pouco crédito; a rede pode reavaliar o modelo.',ops:['Crédito na rede'],riscos:['Franqueados no Simples'],acoes:['Revisar contrato de franquia para 2027'],base:[['Incidência sobre direitos','LC 214, art. 4º']]},
+ // Serviços
+ {g:'Serviços',n:'Serviços empresariais e consultoria',enq:'Regra geral',t:'up',res:'Saem do ISS de 2% a 5% mais PIS/Cofins para a alíquota cheia. O cliente empresa se credita; o cliente pessoa física não.',hoje:'ISS de 2% a 5% e PIS/Cofins de 3,65% no Presumido.',novo:'IBS e CBS cheios; folha não gera crédito.',cred:['Aluguel, software, energia, viagens, serviços contratados'],imp:'Carga nominal sobe. Para cliente empresa, o efeito real é neutro porque ele se credita.',ops:['Cliente contribuinte absorve via crédito'],riscos:['Clientes pessoa física','Folha sem crédito'],acoes:['Separar faturamento B2B e B2C','Reprecificar contratos de 2027'],base:[['Uso e consumo pessoal','LC 214, art. 57']]},
+ {g:'Serviços',n:'Profissionais liberais regulamentados',enq:'Regime diferenciado: redução de 30%',t:'up',res:'Advogados, contadores, engenheiros, arquitetos, administradores, economistas e outras profissões fiscalizadas por conselho têm redução de 30%.',hoje:'ISS fixo ou percentual e PIS/Cofins; muitos no Simples.',novo:'IBS e CBS com 30% de redução, se cumpridos os requisitos.',cred:['Software, aluguel, cursos e serviços'],imp:'Mesmo com 30% de redução, a carga sobe frente ao ISS fixo; no Simples o efeito é menor.',ops:['Cliente empresa se credita'],riscos:['Sociedade uniprofissional perde o ISS fixo até 2032'],acoes:['Avaliar Simples x regime regular','Revisar honorários'],base:[['Redução de 30%','LC 214, art. 127']]},
+ {g:'Serviços',n:'Tecnologia, software e SaaS',enq:'Regra geral',t:'dep',res:'Licenciamento, SaaS e cessão de direitos na regra geral, com destino no domicílio do cliente.',hoje:'ISS de 2% a 5% e PIS/Cofins; disputas ISS x ICMS.',novo:'IBS e CBS; fim da disputa de competência.',cred:['Nuvem, equipamentos, licenças'],imp:'B2B neutro; B2C tende a subir.',ops:['Segurança jurídica'],riscos:['Serviços do exterior tributados na importação'],acoes:['Definir local do cliente no cadastro'],base:[['Incidência sobre intangíveis','LC 214, art. 4º']]},
+ {g:'Serviços',n:'Terceirização, limpeza e vigilância',enq:'Regra geral',t:'up',res:'Intensivo em mão de obra: muita receita e pouco insumo para crédito.',hoje:'ISS e PIS/Cofins, muitos no Presumido.',novo:'IBS e CBS cheios; folha não gera crédito.',cred:['Uniformes, equipamentos, materiais'],imp:'Carga sobe. Para cliente contribuinte, ele se credita do valor pago, então o efeito final é neutro na cadeia.',ops:['Clientes do regime regular'],riscos:['Contratos públicos','Clientes do Simples'],acoes:['Reequilíbrio de contratos com o governo','Cláusula tributária nos contratos privados'],base:[['Reequilíbrio de contratos administrativos','LC 214, arts. 373 a 377']]},
+ {g:'Serviços',n:'Bares e restaurantes',enq:'Regime específico: redução de 40%',t:'dep',res:'Alíquota reduzida em 40%; o cliente empresa não toma crédito da refeição.',hoje:'Simples ou ICMS sobre refeições e PIS/Cofins.',novo:'IBS e CBS com 40% de redução.',cred:['Restaurante se credita de alimentos e insumos','Cliente não se credita'],imp:'Depende do regime atual; muitos seguem no Simples.',ops:[],riscos:['Vedação de crédito ao cliente'],acoes:['Simular Simples x regime específico'],base:[['Redução de 40%','LC 214, art. 275'],['Vedação de crédito ao adquirente','LC 214, art. 276']]},
+ {g:'Serviços',n:'Hotéis, parques e agências de turismo',enq:'Regime específico: redução de 40%',t:'dep',res:'Hotelaria, parques de diversão e temáticos com redução de 40%; agências tributadas sobre a margem.',hoje:'ISS e PIS/Cofins.',novo:'IBS e CBS reduzidos; agência paga sobre o valor menos o repasse aos fornecedores.',cred:['Insumos e investimentos'],imp:'Depende do ISS atual do município.',ops:['Base pela margem nas agências'],riscos:['Locação por temporada equiparada'],acoes:['Revisar notas de intermediação'],base:[['Hotelaria e parques','LC 214, art. 281'],['Agências de turismo','LC 214, art. 289']]},
+ // Saúde e educação
+ {g:'Saúde e educação',n:'Hospitais, clínicas e laboratórios',enq:'Regime diferenciado: redução de 60%',t:'dep',res:'Serviços de saúde do Anexo III com redução de 60%, com crédito de equipamentos e insumos.',hoje:'ISS de 2% a 5% e PIS/Cofins.',novo:'IBS e CBS com 60% de redução.',cred:['Equipamentos, medicamentos, materiais, aluguel'],imp:'Próximo do atual para o paciente; melhora com crédito de equipamentos.',ops:['Crédito de equipamentos'],riscos:['Serviços fora do anexo'],acoes:['Conferir NBS de cada serviço'],base:[['Serviços de saúde','LC 214, art. 130']]},
+ {g:'Saúde e educação',n:'Medicamentos e farmácias',enq:'Redução de 60% ou alíquota zero',t:'down',res:'Medicamentos com redução de 60%; alguns com alíquota zero.',hoje:'PIS/Cofins monofásico e ICMS com ST.',novo:'IBS e CBS reduzidos por lista.',cred:['Mercadorias e despesas'],imp:'Tende a cair ou manter.',ops:[],riscos:['Classificação por lista'],acoes:['Atualizar cadastro de medicamentos'],base:[['Medicamentos com 60%','LC 214, art. 133'],['Medicamentos com zero','LC 214, art. 146']]},
+ {g:'Saúde e educação',n:'Planos de saúde',enq:'Regime específico',t:'dep',res:'Operadoras têm base e alíquota próprias. A empresa que paga plano aos empregados pode ter crédito.',hoje:'PIS/Cofins e ISS.',novo:'Regime específico dos planos de assistência à saúde.',cred:['Empresa contratante: crédito nos termos do regime'],imp:'Depende das alíquotas do regime.',ops:['Crédito na contratação coletiva'],riscos:[],acoes:['Conferir crédito do plano coletivo'],base:[['Planos de assistência à saúde','LC 214, arts. 234 a 243']]},
+ {g:'Saúde e educação',n:'Escolas, faculdades e cursos',enq:'Regime diferenciado: redução de 60%',t:'dep',res:'Serviços de educação do Anexo II com redução de 60%. Prouni tem regra própria na CBS.',hoje:'ISS e PIS/Cofins.',novo:'IBS e CBS com 60% de redução só sobre a mensalidade listada.',cred:['Materiais, aluguel, equipamentos'],imp:'Depende do ISS atual; cursos livres fora do anexo pagam alíquota cheia.',ops:[],riscos:['Outras receitas da escola não têm a redução'],acoes:['Separar receitas por tipo'],base:[['Educação','LC 214, art. 129'],['Prouni','LC 214, art. 308']]},
+ // Financeiro
+ {g:'Financeiro',n:'Bancos, financeiras e fintechs',enq:'Regime específico',t:'dep',res:'Base pela margem: receitas menos despesas de captação. As alíquotas de 2027 a 2033 seguem regra própria para manter a carga.',hoje:'PIS/Cofins cumulativo e ISS sobre tarifas.',novo:'IBS e CBS no regime de serviços financeiros.',cred:['Empresa cliente pode ter crédito em algumas operações'],imp:'Regra desenhada para manter a carga atual.',ops:[],riscos:['Papel no split payment'],acoes:['Adequar sistemas de pagamento'],base:[['Serviços financeiros','LC 214, arts. 181 a 233']]},
+ {g:'Financeiro',n:'Corretoras de seguros',enq:'Regime específico (seguros)',t:'dep',res:'A corretagem de seguros fica no regime específico de serviços financeiros, que inclui seguros, resseguros, previdência e capitalização.',hoje:'ISS sobre comissões e PIS/Cofins; muitas no Simples ou no Presumido.',novo:'IBS e CBS conforme a seção de seguros, resseguros, previdência e capitalização.',cred:['Despesas operacionais conforme o regime'],imp:'Depende do regime atual e da alíquota fixada para o setor.',ops:[],riscos:['Corretora no Simples: avaliar permanência'],acoes:['Simular a carga com o regime específico','Revisar contratos com seguradoras'],base:[['Serviços financeiros e seguros','LC 214, arts. 181 a 233 (seguros: arts. 223 a 228)']]},
+ {g:'Financeiro',n:'Holdings e participações',enq:'Fora do campo (dividendos e JCP)',t:'flat',res:'Dividendos, juros sobre capital próprio e resultado de participações não sofrem IBS e CBS. Locação e venda de imóveis da holding entram no regime de imóveis.',hoje:'Receitas de aluguel com PIS/Cofins e IR.',novo:'Aluguel com 70% de redução; venda com 50% e redutor de ajuste.',cred:['Despesas com os imóveis'],imp:'Holding patrimonial com aluguel precisa refazer a conta.',ops:['Redutor de ajuste na venda'],riscos:['Dividendos acima de R$ 50 mil no mês com retenção de 10%'],acoes:['Revisar distribuição de lucros de 2026 em diante'],base:[['Bens imóveis','LC 214, arts. 251 a 270'],['Dividendos','Lei 15.270/2025']]},
+ {g:'Financeiro',n:'Apostas e loterias',enq:'Regime específico + Imposto Seletivo',t:'up',res:'Concursos de prognósticos têm regime próprio no IBS e na CBS e entram no Imposto Seletivo.',hoje:'Contribuições específicas.',novo:'IBS, CBS e IS sobre a receita.',cred:[],imp:'Carga sobe.',ops:[],riscos:['Responsabilidade solidária (LC 224)'],acoes:[],base:[['Concursos de prognósticos','LC 214, arts. 244 a 250']]},
+ // Imobiliário
+ {g:'Imobiliário',n:'Incorporadoras e loteadoras',enq:'Regime específico: redução de 50%',t:'dep',res:'Alíquota reduzida em 50%, imposto devido a cada pagamento e redutores de ajuste e social na base.',hoje:'RET de 4% ou Presumido.',novo:'IBS e CBS com 50% de redução; redutor social de R$ 100 mil por imóvel residencial novo e R$ 30 mil por lote.',cred:['Materiais, serviços e projetos'],imp:'Imóvel popular tende a manter a carga; alto padrão depende da margem.',ops:['Crédito de obra'],riscos:['Transição dos empreendimentos em andamento'],acoes:['Simular RET x regime novo por empreendimento'],base:[['Redução de 50%','LC 214, art. 261'],['Imposto a cada pagamento','LC 214, art. 262'],['Redutor social','LC 214, art. 259']]},
+ {g:'Imobiliário',n:'Pessoa física que aluga imóveis',enq:'Contribuinte se passar dos limites',t:'dep',res:'Vira contribuinte quem tem mais de 3 imóveis alugados e receita de aluguel acima de R$ 240 mil no ano anterior.',hoje:'Só Imposto de Renda (carnê-leão).',novo:'Acima dos dois limites, IBS e CBS com redução de 70% na locação.',cred:['Despesas com os imóveis'],imp:'Para quem passa dos limites, aparece um tributo novo.',ops:[],riscos:['Controle dos limites a cada ano'],acoes:['Contar imóveis e receita de 2026'],base:[['Pessoa física contribuinte','LC 214, art. 251, § 1º, I'],['Locação com 70%','LC 214, art. 261, parágrafo único']],
+  ex:'Ilustrativo com 26,5%: aluguel de R$ 10.000 por mês com 70% de redução tem alíquota efetiva de 7,95%, ou R$ 795, antes do redutor social de locação residencial e dos créditos.'},
+ {g:'Imobiliário',n:'Construtoras e empreiteiras',enq:'Regime específico de imóveis',t:'dep',res:'Construção civil entra no regime de bens imóveis, com redução de 50%.',hoje:'ISS e PIS/Cofins; INSS na obra.',novo:'IBS e CBS reduzidos; crédito de materiais e serviços.',cred:['Materiais, máquinas, subempreitadas'],imp:'Depende da margem e do cliente.',ops:['Crédito pleno de insumos'],riscos:['Obra pública: reequilíbrio'],acoes:['Revisar contratos de empreitada'],base:[['Bens imóveis','LC 214, arts. 251 e 261']]},
+ // Pequenos e PF
+ {g:'Pequenos negócios',n:'Simples: vende para empresas (B2B)',enq:'Simples com opção híbrida',t:'dep',res:'O cliente só toma crédito do que foi pago no DAS. A empresa pode recolher IBS e CBS por fora para dar crédito cheio.',hoje:'DAS com todos os tributos.',novo:'DAS puro ou DAS sem IBS e CBS, com esses tributos pelo regime regular.',cred:['No regime híbrido, toma crédito das compras'],imp:'Ficar no DAS pode custar clientes; sair aumenta o imposto pago, mas dá crédito ao cliente.',ops:['Reter clientes do regime regular'],riscos:['Opção errada por um ano inteiro'],acoes:['Ouvir os maiores clientes','Simular as duas opções'],base:[['Opção pelo regime regular','LC 214, art. 41, § 3º'],['Crédito limitado ao DAS','LC 214, art. 47 (compras de optante do Simples)']]},
+ {g:'Pequenos negócios',n:'Simples: vende ao consumidor final (B2C)',enq:'Simples Nacional',t:'flat',res:'Para quem vende a pessoa física, o DAS continua a melhor opção na maioria dos casos.',hoje:'DAS.',novo:'DAS com CBS e IBS no lugar de PIS, Cofins, ICMS e ISS.',cred:[],imp:'Pouca mudança na carga.',ops:[],riscos:['Concorrentes do regime regular com preço por fora'],acoes:['Manter cadastro fiscal correto nas notas'],base:[['Regras do Simples','LC 214, art. 41, § 2º']]},
+ {g:'Pequenos negócios',n:'MEI e nanoempreendedor',enq:'MEI / não contribuinte',t:'flat',res:'O MEI segue com valor fixo. O limite sobe para R$ 140 mil a partir de 2028. Quem fatura menos que metade do limite pode ser nanoempreendedor, fora do IBS e da CBS.',hoje:'Valor fixo mensal.',novo:'Valor fixo com IBS e CBS; nanoempreendedor sem esses tributos.',cred:[],imp:'Sem aumento relevante.',ops:['Limite maior a partir de 2028'],riscos:['Ultrapassar o limite'],acoes:['Acompanhar o faturamento mensal'],base:[['Limite de R$ 140 mil','LC 238/2026, arts. 1º e 10'],['Nanoempreendedor','LC 214, art. 26, IV']]},
+ {g:'Pequenos negócios',n:'Motoristas e entregadores de aplicativo',enq:'Nanoempreendedor (regra especial)',t:'flat',res:'Para enquadrar como nanoempreendedor, conta só 25% do que recebe da plataforma.',hoje:'INSS e IR conforme o caso.',novo:'A maioria fica fora do IBS e da CBS.',cred:[],imp:'Sem imposto novo para a maioria.',ops:[],riscos:[],acoes:['Guardar extratos mensais'],base:[['25% do valor bruto','LC 214, art. 26, § 10']]},
+ {g:'Setor público e terceiro setor',n:'Entidades sem fins lucrativos e igrejas',enq:'Imunidade',t:'flat',res:'Templos, partidos, sindicatos e entidades de educação e assistência social sem fins lucrativos são imunes.',hoje:'Imunidades de impostos e isenções de contribuições.',novo:'Imunidade estendida à CBS e ao IBS.',cred:[],imp:'Mantém a desoneração.',ops:[],riscos:['Atividade econômica fora da finalidade'],acoes:['Revisar estatuto e requisitos'],base:[['Imunidades','LC 214, arts. 8º e 9º']]},
+ {g:'Setor público e terceiro setor',n:'Fornecedores do governo',enq:'Regra geral com redutor',t:'dep',res:'Nas compras públicas o imposto fica com o ente comprador e há redutor de alíquota.',hoje:'Tributos normais embutidos no preço.',novo:'Redutor nas alíquotas e reequilíbrio dos contratos.',cred:['Normal'],imp:'Preço com redutor; contratos antigos podem ser reequilibrados.',ops:['Pedido de reequilíbrio'],riscos:['Licitações com preço por fora'],acoes:['Revisar propostas de 2027'],base:[['Redutor','LC 214, art. 370'],['Reequilíbrio','LC 214, arts. 373 a 377']]},
+];
+
+const RENDA=[
+ {cat:'Desde 1º/1/2026',tit:'Isenção de IR até R$ 5.000 por mês',res:'Quem recebe até R$ 5.000 por mês não paga IR. Entre R$ 5.000,01 e R$ 7.350 há redução que cai linearmente até zerar.',pts:[['Isenção até R$ 5.000 e redução até R$ 7.350.','Lei 15.270/2025'],['Acima de R$ 7.350 não há redução.','Lei 15.270/2025, § 2º']],acoes:['Atualizar folha e pró-labore']},
+ {cat:'Desde 1º/1/2026',tit:'Retenção de 10% sobre dividendos',res:'Lucros e dividendos pagos por uma mesma empresa a uma mesma pessoa física acima de R$ 50 mil no mês sofrem retenção de 10% na fonte.',pts:[['Retenção sobre o total pago no mês acima de R$ 50 mil.','Lei 15.270/2025'],['A retenção é antecipação e entra no ajuste da tributação mínima.','Lei 15.270/2025']],acoes:['Programar distribuições mensais','Rever pró-labore x dividendos']},
+ {cat:'Declaração de 2027',tit:'Tributação mínima das altas rendas',res:'Quem soma mais de R$ 600 mil de rendimentos no ano paga uma alíquota mínima que cresce até 10% a partir de R$ 1,2 milhão.',pts:[['Vale a partir do exercício 2027, ano-calendário 2026.','Lei 15.270/2025'],['Alíquota cresce de 0 a 10% entre R$ 600 mil e R$ 1,2 milhão; 10% a partir de R$ 1,2 milhão.','Lei 15.270/2025'],['Há redutor quando a carga da empresa somada à do sócio passa do limite legal.','Lei 15.270/2025']],acoes:['Projetar o IR mínimo dos sócios para o ajuste de 2027']},
+ {cat:'Lucro Presumido',tit:'Presunção 10% maior acima de R$ 5 milhões',res:'Os percentuais de presunção do IRPJ e da CSLL sobem 10% sobre a parcela da receita bruta que passa de R$ 5 milhões no ano.',pts:[['Acréscimo de 10% nos percentuais de presunção.','LC 224/2025, art. 4º, § 4º, VII'],['Só sobre a receita acima de R$ 5 milhões no ano.','LC 224/2025, art. 4º, § 5º']],acoes:['Comparar Presumido x Real para 2027']},
+ {cat:'Benefícios federais',tit:'Corte linear de benefícios',res:'Benefícios federais são reduzidos: isenção e alíquota zero passam a pagar 10% da alíquota padrão, e alíquotas reduzidas sobem.',pts:[['Isenção e alíquota zero: 10% da alíquota padrão.','LC 224/2025, art. 4º, § 4º, I'],['Regimes sobre receita bruta: elevação de 10% do percentual.','LC 224/2025, art. 4º, § 4º, VI']],acoes:['Listar os benefícios federais usados pela empresa']},
+ {cat:'MEI',tit:'Limite do MEI de R$ 140 mil',res:'O limite de receita do MEI sobe para R$ 140 mil por ano a partir de 1º/1/2028.',pts:[['Novo limite.','LC 238/2026, art. 1º'],['Vigência em 2028 para o limite e 2027 para o resto.','LC 238/2026, art. 10']],acoes:['Planejar o crescimento de MEIs clientes']},
+ {cat:'Processo',tit:'Código de Defesa do Contribuinte e consensualidade',res:'Direitos do contribuinte, critérios para devedor contumaz e novas regras de solução de controvérsias e transação.',pts:[['Código de Defesa do Contribuinte.','LC 225/2026'],['Normas gerais de solução de controvérsias e processo.','LC 236/2026']],acoes:['Rever passivos discutidos e chances de acordo']},
+];
+
+const GL=[['CBS','Contribuição Social sobre Bens e Serviços, federal. Substitui PIS e Cofins a partir de 2027.'],['IBS','Imposto sobre Bens e Serviços, de estados e municípios. Substitui ICMS e ISS até 2033.'],['Imposto Seletivo (IS)','Imposto federal sobre bens e serviços prejudiciais à saúde ou ao meio ambiente, a partir de 2027.'],['IVA dual','Modelo com dois tributos sobre o valor adicionado, um federal e um subnacional, com as mesmas regras.'],['Não cumulatividade plena','Direito de abater, do imposto devido, o imposto pago em todas as compras, salvo uso pessoal.'],['Split payment','Separação do imposto no momento do pagamento eletrônico, com repasse direto ao fisco.'],['Alíquota de referência','Alíquota fixada pelo Senado que vale quando o ente não aprova a sua.'],['Princípio do destino','O imposto pertence ao local de quem compra, não de quem vende.'],['Crédito presumido','Crédito calculado por percentual definido em lei, usado em compras de não contribuintes.'],['Cashback','Devolução de parte do imposto às famílias de baixa renda do CadÚnico.'],['cClassTrib','Código de classificação tributária do IBS e da CBS informado em cada item da nota fiscal.'],['CST','Código de Situação Tributária do IBS e da CBS na nota fiscal.'],['Regime regular','Apuração normal do IBS e da CBS, com débitos e créditos, fora do Simples e do MEI.'],['Regime diferenciado','Reduções de 30%, 60% ou alíquota zero para atividades listadas.'],['Regime específico','Regras próprias de base e alíquota para setores como combustíveis, finanças e imóveis.'],['Redutor de ajuste','Valor vinculado a cada imóvel que diminui a base de cálculo na venda.'],['Redutor social','Dedução fixa na base da venda de imóvel residencial novo, de lote e da locação residencial.'],['Nanoempreendedor','Pessoa física com receita abaixo da metade do limite do MEI, não contribuinte do IBS e da CBS.'],['Comitê Gestor do IBS (CGIBS)','Entidade de estados e municípios que administra o IBS.'],['Uso e consumo pessoal','Bens e serviços listados que não geram crédito, como joias, bebidas e lazer.']];
+
+const NORMAS=[['EC 132/2023','20/12/2023','Reforma tributária do consumo na Constituição.'],['LC 214/2025','16/01/2025','IBS, CBS e Imposto Seletivo (texto compilado).'],['Lei 15.270/2025','2025','Isenção de IR até R$ 5 mil, dividendos e tributação mínima.'],['LC 224/2025','26/12/2025','Corte de benefícios federais, Lucro Presumido e apostas.'],['LC 225/2026','08/01/2026','Código de Defesa do Contribuinte.'],['LC 227/2026','13/01/2026','Comitê Gestor do IBS, processo do IBS, ITCMD; altera a LC 214.'],['Decreto 12.955/2026','29/04/2026','Regulamento da CBS.'],['Decreto 13.075/2026','21/07/2026','Altera o Regulamento da CBS.'],['LC 236/2026','04/09/2026','CTN: solução de controvérsias e processo.'],['Decreto 13.133/2026','09/10/2026','Delega a divulgação das alíquotas da CBS sobre combustíveis.'],['LC 238/2026','21/10/2026','Novo limite do MEI.']];
+
+const PEND=['Resolução do Senado com a alíquota de referência da CBS para 2027.','Alíquotas da CBS por litro dos combustíveis em 2027, a divulgar pelo Ministro da Fazenda (Decreto 13.133/2026).','Lei ordinária com as alíquotas do Imposto Seletivo.','Regulamento do IBS pelo Comitê Gestor e atos conjuntos com a Receita.','Cronograma do split payment e percentuais de créditos presumidos (produtor rural e transportador autônomo).','Leis de cada estado e município que fixem alíquotas próprias de IBS.'];
+
+// ---------- render
+const $=(s)=>document.querySelector(s);
+const esc=(s)=>String(s??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const dt=(d)=>{const [a,m]=d.split('-');return m?MES[+m-1]+'/'+a:a};
+
+$('#tab-transicao tbody').innerHTML=TRANS.map(([a,v,i])=>`<tr><td>${a}</td><td class="n">${v===1?'100%':v===0?'extinto':Math.round(v*100)+'%'}</td><td class="n">${i}</td><td><div class="barra" aria-hidden="true"><i class="velho" style="width:${v*100}%"></i><i class="novo" style="width:${(1-v)*100}%"></i></div></td></tr>`).join('');
+
+$('#tl').innerHTML=TL.map(([d,t,txt,b,c])=>`<div class="m ${c==='ja'?'ja':c==='agora'?'agora':''}"><span class="d">${dt(d)}</span><h4>${esc(t)}</h4><p>${esc(txt)}</p><span class="b">${esc(b)}</span></div>`).join('');
+
+const tendResumo={up:[],down:[],dep:[],flat:[]};SEG.forEach(s=>tendResumo[s.t].push(s.n));
+$('#resumo-tend').innerHTML=['down','up','dep','flat'].map(k=>`<div><span class="tag ${TEND[k][1]}">${TEND[k][0]}</span> <span class="nota">${tendResumo[k].map(esc).join(' · ')}</span></div>`).join('');
+
+function filtros(box,vals,onChange){let sel='Todos';box.innerHTML=['Todos',...vals].map(v=>`<button type="button" class="chip" aria-pressed="${v==='Todos'}">${esc(v)}</button>`).join('');
+  box.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;sel=b.textContent;box.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));onChange(sel);});return()=>sel;}
+const norm=(s)=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+
+function cardMud(m,i){return `<button type="button" class="card" data-mud="${i}"><span class="cat">${esc(m.cat)}</span><h3>${esc(m.tit)}</h3><p>${esc(m.res)}</p><div class="tags"><span class="tag ${m.st==='v'?'t-vig':m.st==='t'?'t-tr':'t-reg'}">${ST[m.st]}</span>${m.afeta.slice(0,2).map(a=>`<span class="tag">${esc(a)}</span>`).join('')}</div></button>`}
+function cardSeg(s,i){return `<button type="button" class="card" data-seg="${i}"><span class="cat">${esc(s.g)}</span><h3>${esc(s.n)}</h3><p>${esc(s.res)}</p><div class="tags"><span class="tag ${TEND[s.t][1]}">${TEND[s.t][0]}</span><span class="tag">${esc(s.enq)}</span></div></button>`}
+
+const gMud=[...new Set(MUD.map(m=>m.cat))];let selMud=()=> 'Todos';
+function drawMud(){const q=norm($('#b-mud').value),c=selMud();const it=MUD.map((m,i)=>[m,i]).filter(([m])=>(c==='Todos'||m.cat===c)&&(!q||norm(JSON.stringify(m)).includes(q)));
+  $('#g-mud').innerHTML=it.map(([m,i])=>cardMud(m,i)).join('')||'<p class="nota">Nenhuma mudança com esse termo.</p>';$('#c-mud').textContent=it.length+' de '+MUD.length+' mudanças';}
+selMud=filtros($('#f-mud'),gMud,drawMud);$('#b-mud').addEventListener('input',drawMud);drawMud();
+
+const gSeg=[...new Set(SEG.map(s=>s.g))];let selSeg=()=>'Todos';
+function drawSeg(){const q=norm($('#b-seg').value),c=selSeg();const it=SEG.map((s,i)=>[s,i]).filter(([s])=>(c==='Todos'||s.g===c)&&(!q||norm(JSON.stringify(s)).includes(q)));
+  $('#g-seg').innerHTML=it.map(([s,i])=>cardSeg(s,i)).join('')||'<p class="nota">Nenhum segmento com esse termo.</p>';$('#c-seg').textContent=it.length+' de '+SEG.length+' segmentos';}
+selSeg=filtros($('#f-seg'),gSeg,drawSeg);$('#b-seg').addEventListener('input',drawSeg);drawSeg();
+
+$('#g-renda').innerHTML=RENDA.map((r,i)=>`<button type="button" class="card" data-renda="${i}"><span class="cat">${esc(r.cat)}</span><h3>${esc(r.tit)}</h3><p>${esc(r.res)}</p></button>`).join('');
+$('#gl').innerHTML=GL.map(([t,d])=>`<div><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('');
+$('#normas').innerHTML=NORMAS.map(([a,d,e])=>`<tr><td><b>${esc(a)}</b></td><td>${esc(d)}</td><td>${esc(e)}</td></tr>`).join('');
+$('#pend').innerHTML=PEND.map(p=>`<li>${esc(p)}</li>`).join('');
+
+const lst=(a)=>a&&a.length?'<ul class="lista">'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p class="nota">Sem itens relevantes.</p>';
+const pts=(a)=>'<ul class="pts">'+a.map(([t,b])=>`<li>${esc(t)}<small>${esc(b)}</small></li>`).join('')+'</ul>';
+let ultimoFoco=null;
+function abrir(cat,tit,html){ultimoFoco=document.activeElement;$('#f-cat').textContent=cat;$('#f-tit').textContent=tit;$('#f-corpo').innerHTML=html;$('#ficha-fundo').hidden=false;$('.ficha').scrollTop=0;$('#f-fechar').focus();}
+function fechar(){$('#ficha-fundo').hidden=true;if(ultimoFoco)ultimoFoco.focus();}
+$('#f-fechar').addEventListener('click',fechar);
+$('#ficha-fundo').addEventListener('click',e=>{if(e.target.id==='ficha-fundo')fechar();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ficha-fundo').hidden)fechar();});
+document.addEventListener('click',e=>{
+  const m=e.target.closest('[data-mud]'),s=e.target.closest('[data-seg]'),r=e.target.closest('[data-renda]');
+  if(m){const x=MUD[+m.dataset.mud];abrir(x.cat+' · '+ST[x.st],x.tit,`<p>${esc(x.res)}</p><div class="ab"><div><b>Antes</b>${esc(x.antes)}</div><div><b>Depois</b>${esc(x.depois)}</div></div><h4>Regras e base legal</h4>${pts(x.pts)}<h4>Quem é afetado</h4>${lst(x.afeta)}<h4>O que fazer</h4>${lst(x.acoes)}`);}
+  if(s){const x=SEG[+s.dataset.seg];const T=TEND[x.t];abrir(x.g+' · '+x.enq,x.n,`<p>${esc(x.res)}</p><div class="ab"><div><b>Hoje</b>${esc(x.hoje)}</div><div><b>Com a reforma</b>${esc(x.novo)}</div></div><div class="impacto ${T[1]}"><b>${T[0]}.</b> ${esc(x.imp)}</div><h4>Créditos</h4>${lst(x.cred)}<h4>Oportunidades</h4>${lst(x.ops)}<h4>Riscos</h4>${lst(x.riscos)}<h4>Checklist</h4>${lst(x.acoes)}${x.ex?`<h4>Exemplo</h4><div class="ex">${esc(x.ex)}</div>`:''}<h4>Base legal</h4>${pts(x.base)}`);}
+  if(r){const x=RENDA[+r.dataset.renda];abrir(x.cat,x.tit,`<p>${esc(x.res)}</p><h4>Regras e base legal</h4>${pts(x.pts)}<h4>O que fazer</h4>${lst(x.acoes)}`);}
+});
+
+// abas com hash
+const VIEWS=['visao','tempo','mudancas','segmentos','renda','glossario','base'];
+function ir(v){if(!VIEWS.includes(v))v='visao';document.querySelectorAll('section[data-v]').forEach(s=>s.hidden=s.dataset.v!==v);document.querySelectorAll('#abas button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));}
+$('#abas').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;ir(b.dataset.v);try{history.replaceState(null,'','#'+b.dataset.v)}catch(_){location.hash=b.dataset.v}window.scrollTo(0,0);});
+window.addEventListener('hashchange',()=>ir(location.hash.slice(1)));ir(location.hash.slice(1));
+</script>
