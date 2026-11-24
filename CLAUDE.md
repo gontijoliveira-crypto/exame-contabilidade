@@ -22,10 +22,13 @@
 - Modelo pronto: `posts/plp-299/carrossel.html` (carrossel Instagram 1080×1350, layout antes/depois/impacto, logo Expo em todos os slides, rodapé com fonte, CTA "Fale com a gente"). Reutilizar como base para novos posts.
 - Renderização: abrir o HTML no Playwright e tirar screenshot de cada `.slide`.
 - Vídeo: Reels 1080×1920 com os slides centralizados sobre o azul-marinho, 6 s por slide, transição `slideleft` (ffmpeg `xfade`, processado em RGB para evitar borda colorida).
-- Narração: **sempre a mesma voz dos outros vídeos** — gTTS, feminina, português do Brasil (`gtts-cli -l pt --tld com.br`, com `REQUESTS_CA_BUNDLE=/root/.ccr/ca-bundle.crt`), acelerada com `atempo=1.22`. Um trecho de áudio por slide; cada slide dura a sua fala + 0,9 s; `loudnorm` no final. Reels até 3 min. Requer `translate.google.com.br` liberado no ambiente (já liberado). Rodar `ffmpeg` com `-nostdin` dentro de loops. Roteiro em `narracao.txt` (uma linha por slide, números por extenso).
+- Narração: **voz masculina, grave e encorpada** — o usuário REJEITOU a voz feminina do gTTS ("horrível") e o espeak-ng. Usar edge-tts `pt-BR-AntonioNeural`:
+  `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt edge-tts --proxy "$HTTPS_PROXY" --voice pt-BR-AntonioNeural --rate=+6% --pitch=-12Hz --text "..." --write-media rNN.mp3`
+  depois `ffmpeg -nostdin -i rNN.mp3 -af "bass=g=5:f=110,equalizer=f=3200:t=q:w=1.2:g=-2,acompressor=threshold=-18dB:ratio=3:attack=5:release=80" -ar 44100 -ac 1 aNN.wav`.
+  O `--proxy` é obrigatório (sem ele o edge-tts tenta conexão direta e falha). Requer `speech.platform.bing.com` liberado no ambiente (já liberado). Um trecho por slide; cada slide dura a sua fala + 0,9 s; `loudnorm` no final; Reels até 3 min. Roteiro em `narracao.txt` (uma linha por slide, números por extenso). Se o usuário pedir ainda mais grave/rouca, baixar `--pitch` (ex.: -18Hz) e aumentar `bass`.
 - O usuário ainda **não usa o Typefully**; entregar as imagens diretamente na conversa.
 - Idioma: português do Brasil. Citar fontes oficiais (Agência Senado, Consultoria do Senado, Receita etc.).
 
 ## Histórico
 - 19/11/2026: resumo da votação do PLP 299/2026 (ajuste fiscal) no Senado e carrossel "o que muda se a Câmara aprovar" em `posts/plp-299/` (refeito na marca Expo).
-- 24/11/2026: Câmara aprovou o PLP 299 em 23/11 (353 × 128), sem mudanças; vai à sanção. Novo carrossel de 12 slides e vídeo vertical para Reels (`video-reels.mp4`, gerado com ffmpeg a partir dos slides) em `posts/plp-299-aprovado/` (versão narrada: `video-reels-narrado.mp4`, 2 min 27 s), incluindo o cálculo do teto da restrição à compensação (art. 6º-F) e o crédito para investimentos (art. 12).
+- 24/11/2026: Câmara aprovou o PLP 299 em 23/11 (353 × 128), sem mudanças; vai à sanção. Novo carrossel de 12 slides e vídeo vertical para Reels (`video-reels.mp4`, gerado com ffmpeg a partir dos slides) em `posts/plp-299-aprovado/` (versão narrada com voz masculina Antonio: `video-reels-narrado.mp4`, 2 min 07 s; amostra em `amostra-voz.mp3`), incluindo o cálculo do teto da restrição à compensação (art. 6º-F) e o crédito para investimentos (art. 12).
