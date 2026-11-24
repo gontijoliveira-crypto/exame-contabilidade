@@ -21,8 +21,10 @@
 ## Posts
 - Modelo pronto: `posts/plp-299/carrossel.html` (carrossel Instagram 1080×1350, layout antes/depois/impacto, logo Expo em todos os slides, rodapé com fonte, CTA "Fale com a gente"). Reutilizar como base para novos posts.
 - Renderização: abrir o HTML no Playwright e tirar screenshot de cada `.slide`.
+- Vídeo: Reels 1080×1920 com os slides centralizados sobre o azul-marinho, 6 s por slide, transição `slideleft` (ffmpeg `xfade`, processado em RGB para evitar borda colorida).
 - O usuário ainda **não usa o Typefully**; entregar as imagens diretamente na conversa.
 - Idioma: português do Brasil. Citar fontes oficiais (Agência Senado, Consultoria do Senado, Receita etc.).
 
 ## Histórico
 - 19/11/2026: resumo da votação do PLP 299/2026 (ajuste fiscal) no Senado e carrossel "o que muda se a Câmara aprovar" em `posts/plp-299/` (refeito na marca Expo).
+- 24/11/2026: Câmara aprovou o PLP 299 em 23/11 (353 × 128), sem mudanças; vai à sanção. Novo carrossel de 12 slides e vídeo vertical para Reels (`video-reels.mp4`, gerado com ffmpeg a partir dos slides) em `posts/plp-299-aprovado/`, incluindo o cálculo do teto da restrição à compensação (art. 6º-F) e o crédito para investimentos (art. 12).

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Ajuste fiscal aprovado — Expo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="estilo.css">
+<style>
+.ok-badge{display:inline-flex;align-items:center;gap:12px;font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);background:var(--yellow);padding:12px 24px;border-radius:50px;align-self:flex-start;margin-top:110px}
+.cover h1{margin-top:34px;font-size:104px}
+
+/* Fórmula */
+.formula{display:grid;gap:14px;margin-top:40px}
+.term{display:flex;align-items:center;gap:22px;border:2px solid var(--line);border-radius:24px;padding:24px 30px}
+.op{flex:none;width:54px;height:54px;border-radius:50%;background:var(--navy);color:var(--yellow);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:32px}
+.term .t{flex:1;font-size:26px;line-height:1.35;color:var(--muted)}
+.term .t b{display:block;font-family:var(--display);font-weight:600;font-size:29px;color:var(--navy);margin-bottom:2px}
+.term .v{flex:none;font-family:var(--display);font-weight:700;font-size:38px;color:var(--navy);text-align:right}
+.term .v small{display:block;font-size:18px;font-weight:500;color:var(--muted)}
+.term.total{background:var(--navy);border-color:var(--navy)}
+.term.total .op{background:var(--yellow);color:var(--navy)}
+.term.total .t,.term.total .v small{color:#D7DCEA}
+.term.total .t b{color:#fff}
+.term.total .v{color:var(--yellow)}
+.cond{margin-top:22px;font-size:24px;line-height:1.42;color:var(--muted)}
+.cond b{color:var(--ink)}
+
+/* Tabela do limite */
+.tbl{margin-top:34px;border:2px solid var(--line);border-radius:24px;overflow:hidden;font-size:26px}
+.tbl div{display:grid;grid-template-columns:1.4fr 1fr 1fr;padding:16px 28px;border-top:2px solid var(--line);align-items:center}
+.tbl div:first-child{border-top:0;background:#F3F5FA;font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tbl span:not(:first-child){text-align:right;font-family:var(--display);font-weight:600;color:var(--navy)}
+.tbl .hl{background:var(--navy);color:#fff}
+.tbl .hl span:not(:first-child){color:var(--yellow)}
+.tbl small{font-size:19px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<template id="logo"><div class="logo"><img src="marca/logo-expo.png" alt="Expo Contabilidade e Consultoria"></div></template>
+
+<!-- 1 CAPA -->
+<section class="slide dark cover">
+  <div class="top"><div data-logo></div><span class="count">01/12</span></div>
+  <span class="ok-badge">✓ Aprovado no Congresso</span>
+  <h1>Ajuste fiscal:<br><em>o que muda agora</em></h1>
+  <p class="lead" style="font-size:33px;margin-top:30px">PLP 299/2026 — impactos, e como o governo vai calcular o limite da compensação tributária.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">353 × 128</div><div class="l">Câmara, 23/11 — sem mudanças no texto do Senado</div></div>
+    <div class="stat"><div class="n">Sanção</div><div class="l">Presidente tem 15 dias úteis para sancionar ou vetar</div></div>
+  </div>
+  <div class="foot"><span>Fonte: Agência Câmara · Agência Senado · Conorf/Senado</span><span class="arrow">Arraste →</span></div>
+</section>
+
+<!-- 2 LIMITE DE GASTOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">02/12</span></div>
+  <p class="eyebrow">1 · Limite de gastos</p>
+  <h2>Nos anos de aperto, o gasto cresce até 2%</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>Arcabouço fiscal: despesa cresce até <b>2,5% acima da inflação</b>.</div>
+    <div class="card after"><span class="tag">Agora</span><br>Com contingenciamento no ano, o teto cai para <b>2%</b> — só naquele ano, sem reduzir a base dos seguintes.</div>
+  </div>
+  <div class="tbl">
+    <div><span>Limite 2027 (R$ bi)</span><span>Regra 2,5%</span><span>Regra 2%</span></div>
+    <div><span>Base 2026 + IPCA</span><span>2.503,6</span><span>2.503,6</span></div>
+    <div><span>Crescimento real</span><span>+62,6</span><span>+50,1</span></div>
+    <div class="hl"><span>Limite de 2027</span><span>2.566,2</span><span>2.553,7 <small style="color:#D7DCEA">(–12,5)</small></span></div>
+  </div>
+  <div class="foot" style="margin-top:auto"><span>Fonte: Conorf/Senado, com dados do PLOA 2027</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 3 CONTINGENCIAMENTO -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">03/12</span></div>
+  <p class="eyebrow">2 · Bloqueio de verbas</p>
+  <h2>Contingenciamento preventivo vira regra</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>O governo bloqueava verbas só se o resultado projetado ficasse <b>abaixo do piso da meta</b>.</div>
+    <div class="card after"><span class="tag">Agora</span><br>Pode bloquear mesmo <b>dentro da margem de tolerância</b> e alcançar despesas obrigatórias condicionadas do Executivo. Se o bloqueio passar do necessário, o <b>excedente sai do limite do ano</b>.</div>
+  </div>
+  <div class="impact" style="margin-top:36px"><strong>Por que importa</strong><span>Esse contingenciamento é o “gatilho” que libera a restrição da compensação tributária.</span></div>
+  <div class="foot" style="margin-top:auto"><span>LC 200/2023, arts. 6º-C, 6º-D e 6º-E</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 4 COMPENSAÇÃO -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">04/12</span></div>
+  <p class="eyebrow">3 · Compensação tributária · atenção, empresas</p>
+  <h2>Pagar um tributo com crédito de outro pode ser limitado</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>Crédito reconhecido de um tributo federal quitava débitos de <b>outros</b> tributos da Receita (art. 74 da Lei 9.430/1996).</div>
+    <div class="card after"><span class="tag">Agora</span><br>Nos anos de contingenciamento, o Executivo pode <b>reduzir essa compensação por ato próprio</b>. Créditos de <b>PIS/Pasep e Cofins</b> ficam fora — inclusive para pagar a <b>CBS</b> a partir de 2027.</div>
+  </div>
+  <div class="impact" style="margin-top:36px"><strong>Câmara</strong><span>Destaque para retirar esse trecho foi rejeitado. Ele vale como aprovado no Senado.</span></div>
+  <div class="foot" style="margin-top:auto"><span>LC 200/2023, art. 6º-F</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 5 CÁLCULO -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">05/12</span></div>
+  <p class="eyebrow">Como o governo faz a conta</p>
+  <h2>Teto da restrição à compensação</h2>
+  <div class="formula">
+    <div class="term"><div class="op">1</div><div class="t"><b>Corte para o teto de 2%</b>Diferença entre o limite de 2,5% e o de 2%</div><div class="v">12,5<small>R$ bi</small></div></div>
+    <div class="term"><div class="op">+</div><div class="t"><b>Excedente do bloqueio preventivo</b>O que for contido além do necessário</div><div class="v">5,8<small>R$ bi</small></div></div>
+    <div class="term"><div class="op">+</div><div class="t"><b>Contingenciamento da LRF</b>Bloqueio “normal” para cumprir a meta</div><div class="v">se houver</div></div>
+    <div class="term total"><div class="op">=</div><div class="t"><b>Máximo que a compensação pode ser reduzida</b>no ano</div><div class="v">18,3<small>R$ bi + LRF</small></div></div>
+  </div>
+  <p class="cond"><b>Só vale se</b> o governo tiver adotado o contingenciamento preventivo no ano. Valores: exemplo da Consultoria do Senado para 2027, com bloqueio preventivo de R$ 18,3 bi.</p>
+  <div class="foot" style="margin-top:auto"><span>LC 200/2023, arts. 5º §5º, 6º-E e 6º-F · Conorf/Senado</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 6 NA PRÁTICA -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">06/12</span></div>
+  <p class="eyebrow">Na prática para sua empresa</p>
+  <h2>Do bloqueio ao seu caixa</h2>
+  <div class="steps" style="margin-top:40px">
+    <div class="step done"><div class="dot">1</div><div><h3>Governo contingencia</h3><p>Adota o bloqueio preventivo e calcula o teto da restrição.</p></div></div>
+    <div class="step done"><div class="dot">2</div><div><h3>Publica um ato com percentuais</h3><p>Podem variar conforme o <b>valor total</b> ou o <b>tipo de crédito</b> compensado.</p></div></div>
+    <div class="step next"><div class="dot">3</div><div><h3>Parte vai em dinheiro</h3><p>A fatia que não puder ser compensada terá de ser paga no DARF.</p></div></div>
+    <div class="step"><div class="dot">4</div><div><h3>O crédito não some</h3><p>A lei reduz a compensação, não extingue o crédito — mas não detalha quando ele poderá ser usado.</p></div></div>
+  </div>
+  <div class="impact" style="margin-top:auto"><strong>Já existe</strong><span>Limite mensal para créditos judiciais acima de R$ 10 mi (Lei 14.873/2024). A nova regra se soma a ele.</span></div>
+  <div class="foot"><span>LC 200/2023, art. 6º-F, parágrafo único</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 7 CRÉDITO PARA INVESTIMENTOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">07/12</span></div>
+  <p class="eyebrow">E o limite para abrir crédito?</p>
+  <h2>O que for bloqueado pode virar investimento no ano seguinte</h2>
+  <div class="formula">
+    <div class="term"><div class="op">1</div><div class="t"><b>Condição</b>Resultado primário do ano anterior acima do piso da meta, com o bloqueio preventivo adotado</div></div>
+    <div class="term"><div class="op">2</div><div class="t"><b>Limite do crédito</b>Até o valor contido pelo bloqueio preventivo no ano anterior</div><div class="v">≤ 18,3<small>R$ bi (exemplo)</small></div></div>
+    <div class="term total"><div class="op">3</div><div class="t"><b>Fica fora do limite de gastos</b>mas conta no resultado primário e precisa caber na meta do ano</div></div>
+  </div>
+  <p class="cond">Aberto por ato do Executivo para “investimentos estruturantes”, incluindo os indicados pelas bancadas estaduais.</p>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026, art. 12</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 8 BENEFÍCIOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">08/12</span></div>
+  <p class="eyebrow">4 · Benefícios tributários</p>
+  <h2>Corte nos incentivos fiscais dobra</h2>
+  <div class="compare">
+    <div class="card before"><span class="tag">Antes</span><br>A LC 224/2025 previa redução de <b>10%</b> dos benefícios fiscais.</div>
+    <div class="card after"><span class="tag">Agora</span><br>Redução de <b>20%</b>. Ficam de fora: <b>CPRB</b> (desoneração da folha), <b>TI e semicondutores</b> e veículos para <b>PcD e TEA</b>.</div>
+  </div>
+  <div class="split">
+    <div class="mini before"><h4>Reidi</h4>Limitado ao valor de 2026 corrigido pelo IPCA.</div>
+    <div class="mini before"><h4>Proex</h4>Equalização limitada a R$ 1 bi/ano até 2030.</div>
+  </div>
+  <div class="impact" style="margin-top:30px"><strong>Impacto</strong><span>Setores incentivados devem revisar margens e preços.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 4º, 9º e 11</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 9 ESTADOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">09/12</span></div>
+  <p class="eyebrow">5 · Estados e municípios</p>
+  <h2>Repasses menores no curto prazo</h2>
+  <div class="list">
+    <div class="row"><div class="ic">LK</div><div><h3>Lei Kandir</h3><p>De <b>R$ 4 bi/ano</b> para piso de <b>R$ 2 bi em 2027</b>; a diferença é paga de <b>2028 a 2030</b>.</p></div></div>
+    <div class="row"><div class="ic">CP</div><div><h3>Compensação previdenciária</h3><p>Teto de <b>R$ 3 bi/ano</b> de 2027 a 2030 nos repasses do INSS aos regimes próprios. Valores devidos preservados, pagos de forma escalonada.</p></div></div>
+  </div>
+  <div class="impact" style="margin-top:40px"><strong>Impacto</strong><span>Governadores e prefeitos precisam replanejar o caixa.</span></div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 2º e 6º</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 10 OUTROS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">10/12</span></div>
+  <p class="eyebrow">6 · Outros pontos</p>
+  <h2>Supersalários, diesel e contratos</h2>
+  <div class="list">
+    <div class="row"><div class="ic">60</div><div><h3>Supersalários</h3><p>Congresso tem <b>60 dias</b> após a publicação para regulamentar as verbas fora do teto.</p></div></div>
+    <div class="row"><div class="ic">⛽</div><div><h3>Diesel em 2026</h3><p>Até <b>R$ 10,5 bi</b> do subsídio ficam fora da meta fiscal.</p></div></div>
+    <div class="row"><div class="ic">27</div><div><h3>Obras e contratos</h3><p>Restos a pagar plurianuais só podem ser bloqueados ou cancelados <b>após 31/12/2027</b>.</p></div></div>
+  </div>
+  <div class="foot" style="margin-top:auto"><span>PLP 299/2026 · arts. 10, 13 e 14</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 11 IMPACTO -->
+<section class="slide dark">
+  <div class="top"><div data-logo></div><span class="count">11/12</span></div>
+  <p class="eyebrow">Quanto rende</p>
+  <h2>Melhora estimada no resultado primário de 2027</h2>
+  <div class="big">até R$ 50 bi<small>estimativa do governo após os ajustes (antes: R$ 45,1 a 56,1 bi)</small></div>
+  <div class="out">
+    <div><b>Compensação tributária:</b> R$ 12,8 a 18,3 bi da conta, segundo o parecer.</div>
+    <div><b>Corte de incentivos:</b> R$ 15 bi · <b>Reidi:</b> R$ 4,5 bi.</div>
+    <div><b>Mercado:</b> vê o pacote como positivo, mas cobra medidas adicionais.</div>
+  </div>
+  <div class="foot" style="margin-top:auto"><span>Fonte: parecer do relator · Conorf/Senado</span><span class="arrow">→</span></div>
+</section>
+
+<!-- 12 PRÓXIMOS PASSOS -->
+<section class="slide">
+  <div class="top"><div data-logo></div><span class="count">12/12</span></div>
+  <p class="eyebrow">Próximos passos</p>
+  <h2>Onde estamos</h2>
+  <div class="steps">
+    <div class="step done"><div class="dot">✓</div><div><h3>Senado</h3><p>Aprovado 69 × 2 em 18/11</p></div></div>
+    <div class="step done"><div class="dot">✓</div><div><h3>Câmara</h3><p>Aprovado 353 × 128 em 23/11, sem mudanças</p></div></div>
+    <div class="step next"><div class="dot">3</div><div><h3>Sanção presidencial</h3><p>Até 15 dias úteis; pode haver vetos</p></div></div>
+    <div class="step"><div class="dot">4</div><div><h3>Regulamentação</h3><p>Ato do Executivo com os percentuais da compensação</p></div></div>
+  </div>
+  <div class="cta"><p>Sua empresa usa <b>créditos para compensar tributos</b>? Revise o fluxo de caixa de 2027 com a gente.</p><span class="btn">Fale com a gente</span></div>
+  <div class="foot"><span>Expo Contabilidade e Consultoria</span><span>Fonte: Agência Câmara · Agência Senado</span></div>
+</section>
+
+<script>
+document.querySelectorAll('[data-logo]').forEach(el=>{
+  el.replaceWith(document.getElementById('logo').content.cloneNode(true));
+});
+</script>
+</body>
+</html>
