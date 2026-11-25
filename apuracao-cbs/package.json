@@ -1,0 +1,12 @@
+{
+  "name": "apuracao-cbs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Integração com as APIs da Apuração Assistida da CBS (Receita Federal): débitos, créditos, pagamentos, recolhimentos pelo adquirente (RAD) e geração de DARF",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "apuracao-cbs": "src/cli.js" },
+  "scripts": {
+    "test": "node --test"
+  }
+}
